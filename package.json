@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperledger/anoncreds-wrapper-javascript"
+    "url": "https://github.com/anoncreds/anoncreds-wrapper-javascript"
   },
   "engines": {
     "node": ">= 18"
