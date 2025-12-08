@@ -4,7 +4,7 @@ import type { CredentialRevocationConfig } from './CredentialRevocationConfig'
 import type { RevocationStatusList } from './RevocationStatusList'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { CredentialDefinition } from './CredentialDefinition'
 import { CredentialDefinitionPrivate } from './CredentialDefinitionPrivate'
@@ -69,7 +69,7 @@ export class Credential extends AnoncredsObject {
           ? options.credentialRequest.handle
           : pushToArray(CredentialRequest.fromJson(options.credentialRequest).handle, objectHandles)
 
-      credential = anoncreds.createCredential({
+      credential = NativeAnoncreds.instance.createCredential({
         credentialDefinition,
         credentialDefinitionPrivate,
         credentialOffer,
@@ -87,7 +87,7 @@ export class Credential extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new Credential(anoncreds.credentialFromJson({ json: JSON.stringify(json) }).handle)
+    return new Credential(NativeAnoncreds.instance.credentialFromJson({ json: JSON.stringify(json) }).handle)
   }
 
   public process(options: ProcessCredentialOptions) {
@@ -115,7 +115,7 @@ export class Credential extends AnoncredsObject {
               )
             : undefined
 
-      credential = anoncreds.processCredential({
+      credential = NativeAnoncreds.instance.processCredential({
         credential: this.handle,
         credentialDefinition,
         credentialRequestMetadata,
@@ -134,25 +134,25 @@ export class Credential extends AnoncredsObject {
     return this
   }
   public get schemaId() {
-    return anoncreds.credentialGetAttribute({ objectHandle: this.handle, name: 'schema_id' })
+    return NativeAnoncreds.instance.credentialGetAttribute({ objectHandle: this.handle, name: 'schema_id' })
   }
 
   public get credentialDefinitionId() {
-    return anoncreds.credentialGetAttribute({ objectHandle: this.handle, name: 'cred_def_id' })
+    return NativeAnoncreds.instance.credentialGetAttribute({ objectHandle: this.handle, name: 'cred_def_id' })
   }
 
   public get revocationRegistryId() {
-    return anoncreds.credentialGetAttribute({ objectHandle: this.handle, name: 'rev_reg_id' })
+    return NativeAnoncreds.instance.credentialGetAttribute({ objectHandle: this.handle, name: 'rev_reg_id' })
   }
 
   public get revocationRegistryIndex() {
-    const index = anoncreds.credentialGetAttribute({ objectHandle: this.handle, name: 'rev_reg_index' })
+    const index = NativeAnoncreds.instance.credentialGetAttribute({ objectHandle: this.handle, name: 'rev_reg_index' })
     return index ? Number(index) : undefined
   }
 
   public toW3c(options: CredentialToW3cOptions): W3cCredential {
     return new W3cCredential(
-      anoncreds.credentialToW3c({
+      NativeAnoncreds.instance.credentialToW3c({
         objectHandle: this.handle,
         issuerId: options.issuerId,
         w3cVersion: options.w3cVersion,
@@ -161,6 +161,8 @@ export class Credential extends AnoncredsObject {
   }
 
   public static fromW3c(options: CredentialFromW3cOptions) {
-    return new Credential(anoncreds.credentialFromW3c({ objectHandle: options.credential.handle }).handle)
+    return new Credential(
+      NativeAnoncreds.instance.credentialFromW3c({ objectHandle: options.credential.handle }).handle
+    )
   }
 }

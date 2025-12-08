@@ -2,7 +2,7 @@ import type { ObjectHandle } from '../ObjectHandle'
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { CredentialDefinition } from './CredentialDefinition'
 import { CredentialOffer } from './CredentialOffer'
@@ -37,7 +37,7 @@ export class CredentialRequest extends AnoncredsObject {
           ? options.credentialOffer.handle
           : pushToArray(CredentialOffer.fromJson(options.credentialOffer).handle, objectHandles)
 
-      createReturnObj = anoncreds.createCredentialRequest({
+      createReturnObj = NativeAnoncreds.instance.createCredentialRequest({
         entropy: options.entropy,
         proverDid: options.proverDid,
         credentialDefinition,
@@ -57,6 +57,8 @@ export class CredentialRequest extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new CredentialRequest(anoncreds.credentialRequestFromJson({ json: JSON.stringify(json) }).handle)
+    return new CredentialRequest(
+      NativeAnoncreds.instance.credentialRequestFromJson({ json: JSON.stringify(json) }).handle
+    )
   }
 }

@@ -4,7 +4,7 @@ import type { CredentialRevocationConfig } from './CredentialRevocationConfig'
 import type { RevocationStatusList } from './RevocationStatusList'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { Credential } from './Credential'
 import { CredentialDefinition } from './CredentialDefinition'
@@ -68,7 +68,7 @@ export class W3cCredential extends AnoncredsObject {
           ? options.credentialRequest.handle
           : pushToArray(CredentialRequest.fromJson(options.credentialRequest).handle, objectHandles)
 
-      credential = anoncreds.createW3cCredential({
+      credential = NativeAnoncreds.instance.createW3cCredential({
         credentialDefinition,
         credentialDefinitionPrivate,
         credentialOffer,
@@ -86,7 +86,7 @@ export class W3cCredential extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new W3cCredential(anoncreds.w3cCredentialFromJson({ json: JSON.stringify(json) }).handle)
+    return new W3cCredential(NativeAnoncreds.instance.w3cCredentialFromJson({ json: JSON.stringify(json) }).handle)
   }
 
   public process(options: ProcessW3cCredentialOptions) {
@@ -114,7 +114,7 @@ export class W3cCredential extends AnoncredsObject {
               )
             : undefined
 
-      credential = anoncreds.processW3cCredential({
+      credential = NativeAnoncreds.instance.processW3cCredential({
         credential: this.handle,
         credentialDefinition,
         credentialRequestMetadata,
@@ -135,41 +135,47 @@ export class W3cCredential extends AnoncredsObject {
 
   private getProofDetails(): ObjectHandle {
     if (!this.proofDetails) {
-      this.proofDetails = anoncreds.w3cCredentialGetIntegrityProofDetails({ objectHandle: this.handle })
+      this.proofDetails = NativeAnoncreds.instance.w3cCredentialGetIntegrityProofDetails({ objectHandle: this.handle })
     }
     return this.proofDetails
   }
 
   public get schemaId() {
     const proofDetails = this.getProofDetails()
-    return anoncreds.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'schema_id' })
+    return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'schema_id' })
   }
 
   public get credentialDefinitionId() {
     const proofDetails = this.getProofDetails()
-    return anoncreds.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'cred_def_id' })
+    return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'cred_def_id' })
   }
 
   public get revocationRegistryId() {
     const proofDetails = this.getProofDetails()
-    return anoncreds.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'rev_reg_id' })
+    return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'rev_reg_id' })
   }
 
   public get revocationRegistryIndex() {
     const proofDetails = this.getProofDetails()
-    const index = anoncreds.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'rev_reg_index' })
+    const index = NativeAnoncreds.instance.w3cCredentialProofGetAttribute({
+      objectHandle: proofDetails,
+      name: 'rev_reg_index',
+    })
     return index ? Number(index) : undefined
   }
 
   public get timestamp() {
     const proofDetails = this.getProofDetails()
-    const index = anoncreds.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'timestamp' })
+    const index = NativeAnoncreds.instance.w3cCredentialProofGetAttribute({
+      objectHandle: proofDetails,
+      name: 'timestamp',
+    })
     return index ? Number(index) : undefined
   }
 
   public toLegacy(): Credential {
     return new Credential(
-      anoncreds.credentialFromW3c({
+      NativeAnoncreds.instance.credentialFromW3c({
         objectHandle: this.handle,
       }).handle
     )
@@ -177,7 +183,7 @@ export class W3cCredential extends AnoncredsObject {
 
   public static fromLegacy(options: W3cCredentialFromLegacyOptions): W3cCredential {
     return new W3cCredential(
-      anoncreds.credentialToW3c({
+      NativeAnoncreds.instance.credentialToW3c({
         objectHandle: options.credential.handle,
         issuerId: options.issuerId,
         w3cVersion: options.w3cVersion,

@@ -1,7 +1,7 @@
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 export type CreateSchemaOptions = {
   name: string
@@ -12,10 +12,10 @@ export type CreateSchemaOptions = {
 
 export class Schema extends AnoncredsObject {
   public static create(options: CreateSchemaOptions) {
-    return new Schema(anoncreds.createSchema(options).handle)
+    return new Schema(NativeAnoncreds.instance.createSchema(options).handle)
   }
 
   public static fromJson(json: JsonObject) {
-    return new Schema(anoncreds.schemaFromJson({ json: JSON.stringify(json) }).handle)
+    return new Schema(NativeAnoncreds.instance.schemaFromJson({ json: JSON.stringify(json) }).handle)
   }
 }

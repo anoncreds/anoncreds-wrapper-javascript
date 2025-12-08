@@ -3,8 +3,8 @@ import type { JsonObject } from '../types'
 import type { CredentialProve, NonRevokedIntervalOverride } from './Presentation'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
 
+import { NativeAnoncreds } from '../register'
 import { CredentialDefinition } from './CredentialDefinition'
 import { CredentialRevocationState } from './CredentialRevocationState'
 import { PresentationRequest } from './PresentationRequest'
@@ -51,7 +51,7 @@ export class W3cPresentation extends AnoncredsObject {
           ? options.presentationRequest.handle
           : pushToArray(PresentationRequest.fromJson(options.presentationRequest).handle, objectHandles)
 
-      presentationHandle = anoncreds.createW3cPresentation({
+      presentationHandle = NativeAnoncreds.instance.createW3cPresentation({
         presentationRequest,
         credentials: options.credentials.map((item) => ({
           credential:
@@ -98,7 +98,7 @@ export class W3cPresentation extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new W3cPresentation(anoncreds.w3cPresentationFromJson({ json: JSON.stringify(json) }).handle)
+    return new W3cPresentation(NativeAnoncreds.instance.w3cPresentationFromJson({ json: JSON.stringify(json) }).handle)
   }
 
   public verify(options: VerifyW3cPresentationOptions) {
@@ -124,7 +124,7 @@ export class W3cPresentation extends AnoncredsObject {
           ? options.presentationRequest.handle
           : pushToArray(PresentationRequest.fromJson(options.presentationRequest).handle, objectHandles)
 
-      verified = anoncreds.verifyW3cPresentation({
+      verified = NativeAnoncreds.instance.verifyW3cPresentation({
         presentation: this.handle,
         presentationRequest,
         schemas: schemas.map((o) =>

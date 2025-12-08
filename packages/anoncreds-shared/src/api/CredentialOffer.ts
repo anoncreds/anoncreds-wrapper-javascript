@@ -2,7 +2,7 @@ import type { ObjectHandle } from '../ObjectHandle'
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { KeyCorrectnessProof } from './KeyCorrectnessProof'
 import { pushToArray } from './utils'
@@ -24,7 +24,7 @@ export class CredentialOffer extends AnoncredsObject {
           ? options.keyCorrectnessProof.handle
           : pushToArray(KeyCorrectnessProof.fromJson(options.keyCorrectnessProof).handle, objectHandles)
 
-      credentialOfferHandle = anoncreds.createCredentialOffer({
+      credentialOfferHandle = NativeAnoncreds.instance.createCredentialOffer({
         schemaId: options.schemaId,
         credentialDefinitionId: options.credentialDefinitionId,
         keyCorrectnessProof,
@@ -38,6 +38,6 @@ export class CredentialOffer extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new CredentialOffer(anoncreds.credentialOfferFromJson({ json: JSON.stringify(json) }).handle)
+    return new CredentialOffer(NativeAnoncreds.instance.credentialOfferFromJson({ json: JSON.stringify(json) }).handle)
   }
 }
