@@ -1,7 +1,7 @@
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 export class LinkSecret {
   public static create(): string {
-    return anoncreds.createLinkSecret()
+    return NativeAnoncreds.instance.createLinkSecret()
   }
 }

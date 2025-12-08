@@ -2,7 +2,7 @@ import type { ObjectHandle } from '../ObjectHandle'
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
 import { RevocationStatusList } from './RevocationStatusList'
@@ -41,7 +41,7 @@ export class CredentialRevocationState extends AnoncredsObject {
           ? options.revocationStatusList.handle
           : pushToArray(RevocationStatusList.fromJson(options.revocationStatusList).handle, objectHandles)
 
-      credentialRevocationStateHandle = anoncreds.createOrUpdateRevocationState({
+      credentialRevocationStateHandle = NativeAnoncreds.instance.createOrUpdateRevocationState({
         revocationRegistryDefinition,
         revocationStatusList,
         revocationRegistryIndex: options.revocationRegistryIndex,
@@ -58,11 +58,13 @@ export class CredentialRevocationState extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new CredentialRevocationState(anoncreds.revocationStateFromJson({ json: JSON.stringify(json) }).handle)
+    return new CredentialRevocationState(
+      NativeAnoncreds.instance.revocationStateFromJson({ json: JSON.stringify(json) }).handle
+    )
   }
 
   public update(options: UpdateRevocationStateOptions) {
-    this.handle = anoncreds.createOrUpdateRevocationState({
+    this.handle = NativeAnoncreds.instance.createOrUpdateRevocationState({
       revocationRegistryDefinition: options.revocationRegistryDefinition.handle,
       revocationStatusList: options.revocationStatusList.handle,
       revocationRegistryIndex: options.revocationRegistryIndex,

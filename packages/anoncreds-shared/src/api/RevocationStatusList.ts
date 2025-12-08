@@ -2,7 +2,7 @@ import type { ObjectHandle } from '../ObjectHandle'
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { CredentialDefinition } from './CredentialDefinition'
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
@@ -58,7 +58,7 @@ export class RevocationStatusList extends AnoncredsObject {
               objectHandles
             )
 
-      revocationStatusListHandle = anoncreds.createRevocationStatusList({
+      revocationStatusListHandle = NativeAnoncreds.instance.createRevocationStatusList({
         ...options,
         credentialDefinition,
         revocationRegistryDefinition,
@@ -73,11 +73,13 @@ export class RevocationStatusList extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new RevocationStatusList(anoncreds.revocationStatusListFromJson({ json: JSON.stringify(json) }).handle)
+    return new RevocationStatusList(
+      NativeAnoncreds.instance.revocationStatusListFromJson({ json: JSON.stringify(json) }).handle
+    )
   }
 
   public updateTimestamp(options: UpdateRevocationStatusListTimestampOptions) {
-    const updatedRevocationStatusList = anoncreds.updateRevocationStatusListTimestampOnly({
+    const updatedRevocationStatusList = NativeAnoncreds.instance.updateRevocationStatusListTimestampOnly({
       timestamp: options.timestamp,
       currentRevocationStatusList: this.handle,
     })
@@ -109,7 +111,7 @@ export class RevocationStatusList extends AnoncredsObject {
               objectHandles
             )
 
-      const updatedRevocationStatusList = anoncreds.updateRevocationStatusList({
+      const updatedRevocationStatusList = NativeAnoncreds.instance.updateRevocationStatusList({
         ...options,
         credentialDefinition,
         revocationRegistryDefinition,

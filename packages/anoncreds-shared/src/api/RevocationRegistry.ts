@@ -2,7 +2,7 @@ import type { JsonObject } from '../types'
 import type { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 export type UpdateRevocationRegistryOptions = {
   revocationRegistryDefinition: RevocationRegistryDefinition
@@ -13,6 +13,8 @@ export type UpdateRevocationRegistryOptions = {
 
 export class RevocationRegistry extends AnoncredsObject {
   public static fromJson(json: JsonObject) {
-    return new RevocationRegistry(anoncreds.revocationRegistryFromJson({ json: JSON.stringify(json) }).handle)
+    return new RevocationRegistry(
+      NativeAnoncreds.instance.revocationRegistryFromJson({ json: JSON.stringify(json) }).handle
+    )
   }
 }

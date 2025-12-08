@@ -3,7 +3,7 @@ import type { JsonObject } from '../types'
 import type { RevocationRegistry } from './RevocationRegistry'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { Credential } from './Credential'
 import { CredentialDefinition } from './CredentialDefinition'
@@ -72,7 +72,7 @@ export class Presentation extends AnoncredsObject {
           ? options.presentationRequest.handle
           : pushToArray(PresentationRequest.fromJson(options.presentationRequest).handle, objectHandles)
 
-      presentationHandle = anoncreds.createPresentation({
+      presentationHandle = NativeAnoncreds.instance.createPresentation({
         presentationRequest,
         credentials: options.credentials.map((item) => ({
           credential:
@@ -120,7 +120,7 @@ export class Presentation extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new Presentation(anoncreds.presentationFromJson({ json: JSON.stringify(json) }).handle)
+    return new Presentation(NativeAnoncreds.instance.presentationFromJson({ json: JSON.stringify(json) }).handle)
   }
 
   public verify(options: VerifyPresentationOptions) {
@@ -146,7 +146,7 @@ export class Presentation extends AnoncredsObject {
           ? options.presentationRequest.handle
           : pushToArray(PresentationRequest.fromJson(options.presentationRequest).handle, objectHandles)
 
-      verified = anoncreds.verifyPresentation({
+      verified = NativeAnoncreds.instance.verifyPresentation({
         presentation: this.handle,
         presentationRequest,
         schemas: schemas.map((o) =>

@@ -2,7 +2,7 @@ import type { ObjectHandle } from '../ObjectHandle'
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { CredentialDefinition } from './CredentialDefinition'
 import { RevocationRegistryDefinitionPrivate } from './RevocationRegistryDefinitionPrivate'
@@ -33,7 +33,7 @@ export class RevocationRegistryDefinition extends AnoncredsObject {
           ? options.credentialDefinition.handle
           : pushToArray(CredentialDefinition.fromJson(options.credentialDefinition).handle, objectHandles)
 
-      createReturnObj = anoncreds.createRevocationRegistryDefinition({
+      createReturnObj = NativeAnoncreds.instance.createRevocationRegistryDefinition({
         ...options,
         credentialDefinition,
       })
@@ -54,25 +54,34 @@ export class RevocationRegistryDefinition extends AnoncredsObject {
 
   public static fromJson(json: JsonObject) {
     return new RevocationRegistryDefinition(
-      anoncreds.revocationRegistryDefinitionFromJson({ json: JSON.stringify(json) }).handle
+      NativeAnoncreds.instance.revocationRegistryDefinitionFromJson({ json: JSON.stringify(json) }).handle
     )
   }
 
   public getId() {
-    return anoncreds.revocationRegistryDefinitionGetAttribute({ objectHandle: this.handle, name: 'id' })
+    return NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({ objectHandle: this.handle, name: 'id' })
   }
 
   public getMaximumCredentialNumber() {
     return Number(
-      anoncreds.revocationRegistryDefinitionGetAttribute({ objectHandle: this.handle, name: 'max_cred_num' })
+      NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
+        objectHandle: this.handle,
+        name: 'max_cred_num',
+      })
     )
   }
 
   public getTailsHash() {
-    return anoncreds.revocationRegistryDefinitionGetAttribute({ objectHandle: this.handle, name: 'tails_hash' })
+    return NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
+      objectHandle: this.handle,
+      name: 'tails_hash',
+    })
   }
 
   public getTailsLocation() {
-    return anoncreds.revocationRegistryDefinitionGetAttribute({ objectHandle: this.handle, name: 'tails_location' })
+    return NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
+      objectHandle: this.handle,
+      name: 'tails_location',
+    })
   }
 }

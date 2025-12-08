@@ -1,4 +1,4 @@
-import { anoncreds } from './register'
+import { NativeAnoncreds } from './register'
 
 export class ObjectHandle {
   private readonly _handle: number
@@ -12,11 +12,11 @@ export class ObjectHandle {
   }
 
   public typeName() {
-    return anoncreds.getTypeName({ objectHandle: this })
+    return NativeAnoncreds.instance.getTypeName({ objectHandle: this })
   }
 
   // TODO: do we need this?
   public clear() {
-    anoncreds.objectFree({ objectHandle: this })
+    NativeAnoncreds.instance.objectFree({ objectHandle: this })
   }
 }

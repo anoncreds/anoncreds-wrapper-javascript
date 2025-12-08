@@ -2,7 +2,7 @@ import type { ObjectHandle } from '../ObjectHandle'
 import type { JsonObject } from '../types'
 
 import { AnoncredsObject } from '../AnoncredsObject'
-import { anoncreds } from '../register'
+import { NativeAnoncreds } from '../register'
 
 import { CredentialDefinitionPrivate } from './CredentialDefinitionPrivate'
 import { KeyCorrectnessProof } from './KeyCorrectnessProof'
@@ -33,7 +33,7 @@ export class CredentialDefinition extends AnoncredsObject {
         options.schema instanceof Schema
           ? options.schema.handle
           : pushToArray(Schema.fromJson(options.schema).handle, objectHandles)
-      createReturnObj = anoncreds.createCredentialDefinition({
+      createReturnObj = NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: options.schemaId,
         schema,
         signatureType: options.signatureType,
@@ -54,6 +54,8 @@ export class CredentialDefinition extends AnoncredsObject {
   }
 
   public static fromJson(json: JsonObject) {
-    return new CredentialDefinition(anoncreds.credentialDefinitionFromJson({ json: JSON.stringify(json) }).handle)
+    return new CredentialDefinition(
+      NativeAnoncreds.instance.credentialDefinitionFromJson({ json: JSON.stringify(json) }).handle
+    )
   }
 }
