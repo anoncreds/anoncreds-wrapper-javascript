@@ -3,7 +3,7 @@ import type { NativeMethods } from './NativeBindingInterface'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { Library } from '@2060.io/ffi-napi'
+import koffi from 'koffi'
 
 import { nativeBindings } from './bindings'
 
@@ -63,10 +63,22 @@ const getLibrary = () => {
   // Casting here as a string because there is a guard of none of the paths
   const validLibraryPath = libaries.find((l) => doesPathExist(l)) as string
 
-  // TODO
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  return Library(validLibraryPath, nativeBindings)
+  // Load library with Koffi
+  const lib = koffi.load(validLibraryPath)
+
+  // Bind functions using koffi
+  const boundMethods: { [key: string]: any } = {}
+
+  for (const [funcName, signature] of Object.entries(nativeBindings)) {
+    try {
+      boundMethods[funcName] = lib.func(signature as string)
+    } catch (error) {
+      console.warn(`Warning: Failed to bind function ${funcName}: ${error}`)
+      // Continue binding other functions
+    }
+  }
+
+  return boundMethods
 }
 
 let nativeAnoncreds: NativeMethods | undefined
