@@ -5,11 +5,11 @@
   "description": "React Native wrapper for Anoncreds",
   "main": "build/index",
   "source": "src/index",
-  "homepage": "https://github.com/hyperledger/anoncreds-wrapper-javascript/tree/main/packages/anoncreds-react-native",
+  "homepage": "https://github.com/anoncreds/anoncreds-wrapper-javascript/tree/main/packages/anoncreds-react-native",
   "author": "Hyperledger (https://github.com/hyperledger)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperledger/anoncreds-wrapper-javascript",
+    "url": "https://github.com/anoncreds/anoncreds-wrapper-javascript",
     "directory": "packages/anoncreds-react-native"
   },
   "publishConfig": {
@@ -50,7 +50,7 @@
   },
   "binary": {
     "version": "v0.2.3",
-    "host": "https://github.com/hyperledger/anoncreds-rs/releases/download",
+    "host": "https://github.com/anoncreds/anoncreds-rs/releases/download",
     "packageName": "library-ios-android.tar.gz"
   }
 }
