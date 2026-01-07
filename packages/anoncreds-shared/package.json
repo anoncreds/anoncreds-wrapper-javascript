@@ -4,9 +4,9 @@
   "license": "Apache-2.0",
   "description": "Anoncreds wrapper library with NodeJS and React Native",
   "main": "src/index",
-  "homepage": "https://github.com/hyperledger/anoncreds-wrapper-javascript/tree/main/packages/anoncreds-shared",
+  "homepage": "https://github.com/anoncreds/anoncreds-wrapper-javascript/tree/main/packages/anoncreds-shared",
   "repository": {
-    "url": "https://github.com/hyperledger/anoncreds-wrapper-javascript",
+    "url": "https://github.com/anoncreds/anoncreds-wrapper-javascript",
     "type": "git",
     "directory": "packages/anoncreds-shared"
   },
