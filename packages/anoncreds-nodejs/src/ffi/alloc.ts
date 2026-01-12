@@ -1,17 +1,7 @@
-import { alloc } from '@2060.io/ref-napi'
+import koffi from 'koffi'
+import { FFI_OBJECT_HANDLE } from './primitives'
+import { ByteBufferStruct } from './structures'
 
-import { FFI_INT8, FFI_OBJECT_HANDLE, FFI_STRING } from '../ffi/primitives'
-
-import { ByteBufferStruct, CredRevInfoStruct } from './structures'
-
-// TODO: more allocations here
-
-export const allocateStringBuffer = (): Buffer => alloc(FFI_STRING)
-
-export const allocatePointer = (): Buffer => alloc(FFI_OBJECT_HANDLE)
-
-export const allocateInt8Buffer = (): Buffer => alloc(FFI_INT8)
-
-export const allocateCredRevInfoStructPointer = (): Buffer => alloc(CredRevInfoStruct)
-
-export const allocateByteBuffer = (): Buffer => alloc(ByteBufferStruct)
+export const allocatePointer = (): Buffer => {
+  return koffi.alloc(FFI_OBJECT_HANDLE, 1)
+}

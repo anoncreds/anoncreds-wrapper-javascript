@@ -1,5 +1,10 @@
-import { reinterpret } from '@2060.io/ref-napi'
+import koffi from 'koffi'
 
-export const byteBufferToBuffer = (buffer: { data: Buffer; len: number }) => reinterpret(buffer.data, buffer.len)
+// Conversion utilities for koffi
+export const byteBufferToBuffer = (buffer: { data: Buffer; len: number }): Buffer => {
+  const dataAsArray = koffi.decode(buffer.data, 'uint8', buffer.len)
+
+  return Buffer.from(dataAsArray)
+}
 
 export const secretBufferToBuffer = byteBufferToBuffer

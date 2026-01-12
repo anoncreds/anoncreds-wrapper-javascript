@@ -1,22 +1,9 @@
-import type { Pointer } from '@2060.io/ref-napi'
-import type { TypedArray } from 'ref-array-di'
-import type { StructObject } from 'ref-struct-di'
-import type { ByteBufferStruct } from './structures'
-
-import { NULL } from '@2060.io/ref-napi'
 import { ObjectHandle } from '@hyperledger/anoncreds-shared'
-
-import { I32ListStruct, Int32List, ObjectHandleListStruct, StringListStruct } from './structures'
+import { I32ListStruct, ObjectHandleListStruct, StringListStruct } from './structures'
 
 type Argument = Record<string, unknown> | unknown[] | Date | Uint8Array | SerializedArgument | boolean | ObjectHandle
 
-type SerializedArgument =
-  | string
-  | number
-  | ArrayBuffer
-  | Buffer
-  | StructObject<{ count: number | string; data: TypedArray<string | number | null> }>
-  | StructObject<{ count: number | string; data: Pointer<TypedArray<string | number | null>> }>
+type SerializedArgument = string | number | ArrayBuffer | Buffer | object | null
 
 type SerializedArguments = Record<string, SerializedArgument>
 
@@ -32,13 +19,13 @@ export type SerializedOptions<Type> = Required<{
           : Type[Property] extends Record<string, unknown>
             ? string
             : Type[Property] extends string[]
-              ? Buffer
+              ? object
               : Type[Property] extends string[] | undefined
-                ? Buffer
+                ? object
                 : Type[Property] extends number[]
-                  ? Buffer
+                  ? object
                   : Type[Property] extends number[] | undefined
-                    ? Buffer
+                    ? object
                     : Type[Property] extends Date
                       ? number
                       : Type[Property] extends Date | undefined
@@ -52,15 +39,15 @@ export type SerializedOptions<Type> = Required<{
                               : Type[Property] extends ObjectHandle
                                 ? number
                                 : Type[Property] extends ObjectHandle[]
-                                  ? Buffer
+                                  ? object
                                   : Type[Property] extends ObjectHandle[] | undefined
-                                    ? Buffer
+                                    ? object
                                     : Type[Property] extends ObjectHandle | undefined
                                       ? number
                                       : Type[Property] extends Uint8Array
-                                        ? typeof ByteBufferStruct
+                                        ? object
                                         : Type[Property] extends Uint8Array | undefined
-                                          ? typeof ByteBufferStruct
+                                          ? object
                                           : Type[Property] extends unknown[] | undefined
                                             ? string
                                             : Type[Property] extends Record<string, unknown> | undefined
@@ -68,13 +55,11 @@ export type SerializedOptions<Type> = Required<{
                                               : unknown
 }>
 
-// TODO: this method needs to be reworked.
-// It is very messy
-// cannot handle complex data structures well
+// Serialize arguments for koffi
 const serialize = (arg: Argument): SerializedArgument => {
   switch (typeof arg) {
     case 'undefined':
-      return NULL
+      return null
     case 'boolean':
       return Number(arg)
     case 'string':
@@ -84,27 +69,43 @@ const serialize = (arg: Argument): SerializedArgument => {
     case 'function':
       return arg
     case 'object':
+      if (arg === null) {
+        return null
+      }
       if (arg instanceof ObjectHandle) {
         return arg.handle
       }
       if (Array.isArray(arg)) {
         if (arg.every((it) => typeof it === 'string')) {
-          return StringListStruct({ count: arg.length, data: arg as unknown as TypedArray<string> })
+          // For koffi, create a simple object structure
+          return {
+            count: arg.length,
+            data: arg,
+          }
         }
         if (arg.every((it) => it instanceof ObjectHandle)) {
-          return ObjectHandleListStruct({
+          return {
             count: arg.length,
-            data: (arg as ObjectHandle[]).map((i: ObjectHandle) => i.handle) as unknown as TypedArray<number>,
-          })
+            data: (arg as ObjectHandle[]).map((i: ObjectHandle) => i.handle),
+          }
         }
         if (arg.every((it) => typeof it === 'number')) {
-          return I32ListStruct({
+          return {
             count: arg.length,
-            data: Int32List(arg as number[]) as unknown as TypedArray<number>,
-          })
+            data: arg,
+          }
         }
       }
-      // TODO: add more serialization here for classes and uint8arrays
+      if (arg instanceof Date) {
+        return arg.getTime()
+      }
+      if (arg instanceof Uint8Array) {
+        return {
+          len: arg.length,
+          data: Buffer.from(arg),
+        }
+      }
+      // For objects, JSON stringify
       return JSON.stringify(arg)
     default:
       throw new Error('could not serialize value')
