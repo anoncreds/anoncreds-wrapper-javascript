@@ -14,10 +14,7 @@
     "access": "public",
     "main": "build/index"
   },
-  "files": [
-    "build",
-    "installBinary.js"
-  ],
+  "files": ["build", "installBinary.js"],
   "scripts": {
     "check-types": "pnpm compile --noEmit",
     "build": "pnpm clean && pnpm compile",
