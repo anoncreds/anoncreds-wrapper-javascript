@@ -1,6 +1,6 @@
 {
   "name": "@hyperledger/anoncreds-shared",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "license": "Apache-2.0",
   "description": "Anoncreds wrapper library with NodeJS and React Native",
   "main": "src/index",
@@ -14,7 +14,10 @@
     "access": "public",
     "main": "build/index"
   },
-  "files": ["build", "installBinary.js"],
+  "files": [
+    "build",
+    "installBinary.js"
+  ],
   "scripts": {
     "check-types": "pnpm compile --noEmit",
     "build": "pnpm clean && pnpm compile",
