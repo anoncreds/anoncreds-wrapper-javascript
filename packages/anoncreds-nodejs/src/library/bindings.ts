@@ -1,42 +1,51 @@
+import * as koffi from 'koffi'
 import {
   ByteBufferStruct,
-  ByteBufferStructPtr,
-  CredentialEntryListStruct,
-  CredentialProveListStruct,
-  FFI_ERRORCODE,
+  CredRevInfoStruct,
+  CredentialEntryStructList,
+  CredentialProveStructList,
+  FFI_ERROR_CODE,
   FFI_INT8,
-  FFI_INT8_PTR,
   FFI_INT64,
   FFI_OBJECT_HANDLE,
-  FFI_OBJECT_HANDLE_PTR,
   FFI_STRING,
-  FFI_STRING_PTR,
   FFI_VOID,
   I32ListStruct,
-  NonRevokedIntervalOverrideListStruct,
-  ObjectHandleListStruct,
+  NonrevokedIntervalOverrideStructList,
+  ObjectHandleList,
   StringListStruct,
 } from '../ffi'
 
-export const nativeBindings = {
-  // first element is method return type, second element is list of method argument types
+export const nativeBindings: Record<string, [koffi.TypeSpec, Array<koffi.TypeSpec>]> = {
+  // Version and utilities
+  anoncreds_version: [koffi.pointer(FFI_STRING), []],
+  anoncreds_set_default_logger: [FFI_ERROR_CODE, []],
+
+  // Error handling
+  anoncreds_get_current_error: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_STRING))]],
+
+  // Nonce
+  anoncreds_generate_nonce: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_STRING))]],
+
+  // Buffer and memory management
   anoncreds_buffer_free: [FFI_VOID, [ByteBufferStruct]],
-  anoncreds_create_credential: [
-    FFI_ERRORCODE,
-    [
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      StringListStruct,
-      StringListStruct,
-      StringListStruct,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE_PTR,
-    ],
+  anoncreds_string_free: [FFI_VOID, [koffi.pointer(FFI_STRING)]],
+  anoncreds_object_free: [FFI_VOID, [FFI_OBJECT_HANDLE]],
+
+  // Object operations
+  anoncreds_object_get_json: [FFI_ERROR_CODE, [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(ByteBufferStruct))]],
+  anoncreds_object_get_type_name: [FFI_ERROR_CODE, [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_STRING))]],
+
+  // Schema operations
+  anoncreds_create_schema: [
+    FFI_ERROR_CODE,
+    [FFI_STRING, FFI_STRING, FFI_STRING, StringListStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
+  anoncreds_schema_from_json: [FFI_ERROR_CODE, [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))]],
+
+  // Credential definition operations
   anoncreds_create_credential_definition: [
-    FFI_ERRORCODE,
+    FFI_ERROR_CODE,
     [
       FFI_STRING,
       FFI_OBJECT_HANDLE,
@@ -44,59 +53,29 @@ export const nativeBindings = {
       FFI_STRING,
       FFI_STRING,
       FFI_INT8,
-      FFI_OBJECT_HANDLE_PTR,
-      FFI_OBJECT_HANDLE_PTR,
-      FFI_OBJECT_HANDLE_PTR,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
   ],
-  anoncreds_create_credential_offer: [
-    FFI_ERRORCODE,
-    [FFI_STRING, FFI_STRING, FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE_PTR],
+  anoncreds_credential_definition_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
-  anoncreds_create_credential_request: [
-    FFI_ERRORCODE,
-    [
-      FFI_STRING,
-      FFI_STRING,
-      FFI_OBJECT_HANDLE,
-      FFI_STRING,
-      FFI_STRING,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE_PTR,
-      FFI_OBJECT_HANDLE_PTR,
-    ],
+  anoncreds_credential_definition_private_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
-  anoncreds_create_link_secret: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE_PTR]],
-  anoncreds_create_or_update_revocation_state: [
-    FFI_ERRORCODE,
-    [
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      FFI_INT64,
-      FFI_STRING,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE_PTR,
-    ],
+
+  // Key correctness proof
+  anoncreds_key_correctness_proof_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
-  anoncreds_create_presentation: [
-    FFI_ERRORCODE,
-    [
-      FFI_OBJECT_HANDLE,
-      CredentialEntryListStruct,
-      CredentialProveListStruct,
-      StringListStruct,
-      StringListStruct,
-      FFI_STRING,
-      ObjectHandleListStruct,
-      StringListStruct,
-      ObjectHandleListStruct,
-      StringListStruct,
-      FFI_OBJECT_HANDLE_PTR,
-    ],
-  ],
+
+  // Revocation registry operations
   anoncreds_create_revocation_registry_def: [
-    FFI_ERRORCODE,
+    FFI_ERROR_CODE,
     [
       FFI_OBJECT_HANDLE,
       FFI_STRING,
@@ -105,50 +84,30 @@ export const nativeBindings = {
       FFI_STRING,
       FFI_INT64,
       FFI_STRING,
-      FFI_OBJECT_HANDLE_PTR,
-      FFI_OBJECT_HANDLE_PTR,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
   ],
-  anoncreds_create_schema: [
-    FFI_ERRORCODE,
-    [FFI_STRING, FFI_STRING, FFI_STRING, StringListStruct, FFI_OBJECT_HANDLE_PTR],
+  anoncreds_revocation_registry_definition_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
-  anoncreds_credential_get_attribute: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, FFI_STRING, FFI_STRING_PTR]],
-  anoncreds_encode_credential_attributes: [FFI_ERRORCODE, [StringListStruct, FFI_STRING_PTR]],
-  anoncreds_generate_nonce: [FFI_ERRORCODE, [FFI_STRING_PTR]],
-  anoncreds_get_current_error: [FFI_ERRORCODE, [FFI_STRING_PTR]],
-  anoncreds_object_free: [FFI_VOID, [FFI_OBJECT_HANDLE]],
-  anoncreds_string_free: [FFI_VOID, [FFI_STRING_PTR]],
-  anoncreds_object_get_json: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, ByteBufferStructPtr]],
-  anoncreds_object_get_type_name: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, FFI_STRING_PTR]],
-  anoncreds_presentation_request_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_process_credential: [
-    FFI_ERRORCODE,
-    [FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE, FFI_STRING, FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE_PTR],
+  anoncreds_revocation_registry_definition_private_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
   anoncreds_revocation_registry_definition_get_attribute: [
-    FFI_ERRORCODE,
-    [FFI_OBJECT_HANDLE, FFI_STRING, FFI_STRING_PTR],
+    FFI_ERROR_CODE,
+    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_STRING))],
   ],
-  anoncreds_set_default_logger: [FFI_ERRORCODE, []],
-  anoncreds_verify_presentation: [
-    FFI_ERRORCODE,
-    [
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      ObjectHandleListStruct,
-      StringListStruct,
-      ObjectHandleListStruct,
-      StringListStruct,
-      ObjectHandleListStruct,
-      StringListStruct,
-      ObjectHandleListStruct,
-      NonRevokedIntervalOverrideListStruct,
-      FFI_INT8_PTR,
-    ],
+  anoncreds_revocation_registry_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
+
+  // Revocation status list operations
   anoncreds_create_revocation_status_list: [
-    FFI_ERRORCODE,
+    FFI_ERROR_CODE,
     [
       FFI_OBJECT_HANDLE,
       FFI_STRING,
@@ -157,43 +116,121 @@ export const nativeBindings = {
       FFI_STRING,
       FFI_INT8,
       FFI_INT64,
-      FFI_OBJECT_HANDLE_PTR,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+    ],
+  ],
+  anoncreds_update_revocation_status_list: [
+    FFI_ERROR_CODE,
+    [
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      I32ListStruct,
+      I32ListStruct,
+      FFI_INT64,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
   ],
   anoncreds_update_revocation_status_list_timestamp_only: [
-    FFI_ERRORCODE,
-    [FFI_INT64, FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE_PTR],
+    FFI_ERROR_CODE,
+    [FFI_INT64, FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
-  anoncreds_update_revocation_status_list: [
-    FFI_ERRORCODE,
+  anoncreds_revocation_status_list_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+
+  // Revocation state operations
+  anoncreds_create_or_update_revocation_state: [
+    FFI_ERROR_CODE,
     [
       FFI_OBJECT_HANDLE,
       FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      FFI_OBJECT_HANDLE,
-      I32ListStruct,
-      I32ListStruct,
       FFI_INT64,
-      FFI_OBJECT_HANDLE_PTR,
+      FFI_STRING,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
   ],
-  anoncreds_version: [FFI_STRING, []],
-  anoncreds_credential_request_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_credential_request_metadata_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_presentation_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_credential_offer_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_revocation_registry_definition_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_revocation_registry_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_revocation_status_list_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_revocation_state_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_credential_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_credential_definition_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_credential_definition_private_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_revocation_registry_definition_private_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_key_correctness_proof_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_schema_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
+  anoncreds_revocation_state_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+
+  // Link secret operations
+  anoncreds_create_link_secret: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_STRING))]],
+
+  // Credential offer operations
+  anoncreds_create_credential_offer: [
+    FFI_ERROR_CODE,
+    [FFI_STRING, FFI_STRING, FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+  anoncreds_credential_offer_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+
+  // Credential request operations
+  anoncreds_create_credential_request: [
+    FFI_ERROR_CODE,
+    [
+      FFI_STRING,
+      FFI_STRING,
+      FFI_OBJECT_HANDLE,
+      FFI_STRING,
+      FFI_STRING,
+      FFI_OBJECT_HANDLE,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+    ],
+  ],
+  anoncreds_credential_request_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+  anoncreds_credential_request_metadata_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+
+  // Credential operations
+  anoncreds_create_credential: [
+    FFI_ERROR_CODE,
+    [
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      StringListStruct,
+      StringListStruct,
+      StringListStruct,
+      koffi.pointer(CredRevInfoStruct),
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+    ],
+  ],
+  anoncreds_credential_from_json: [FFI_ERROR_CODE, [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))]],
+  anoncreds_credential_get_attribute: [
+    FFI_ERROR_CODE,
+    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_STRING))],
+  ],
+  anoncreds_process_credential: [
+    FFI_ERROR_CODE,
+    [
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      FFI_STRING,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+    ],
+  ],
+  anoncreds_encode_credential_attributes: [FFI_ERROR_CODE, [StringListStruct, koffi.out(koffi.pointer(FFI_STRING))]],
+
+  // W3C Credential operations
   anoncreds_create_w3c_credential: [
-    FFI_ERRORCODE,
+    FFI_ERROR_CODE,
     [
       FFI_OBJECT_HANDLE,
       FFI_OBJECT_HANDLE,
@@ -201,50 +238,112 @@ export const nativeBindings = {
       FFI_OBJECT_HANDLE,
       StringListStruct,
       StringListStruct,
-      FFI_OBJECT_HANDLE,
+      koffi.pointer(CredRevInfoStruct),
       FFI_STRING,
-      FFI_OBJECT_HANDLE_PTR,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
   ],
+  anoncreds_w3c_credential_from_json: [FFI_ERROR_CODE, [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))]],
+  anoncreds_credential_to_w3c: [
+    FFI_ERROR_CODE,
+    [FFI_OBJECT_HANDLE, FFI_STRING, FFI_STRING, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+  anoncreds_credential_from_w3c: [FFI_ERROR_CODE, [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))]],
   anoncreds_process_w3c_credential: [
-    FFI_ERRORCODE,
-    [FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE, FFI_STRING, FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE_PTR],
-  ],
-  anoncreds_create_w3c_presentation: [
-    FFI_ERRORCODE,
+    FFI_ERROR_CODE,
     [
       FFI_OBJECT_HANDLE,
-      CredentialEntryListStruct,
-      CredentialProveListStruct,
+      FFI_OBJECT_HANDLE,
       FFI_STRING,
-      ObjectHandleListStruct,
-      StringListStruct,
-      ObjectHandleListStruct,
-      StringListStruct,
-      FFI_STRING,
-      FFI_OBJECT_HANDLE_PTR,
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
+  ],
+  anoncreds_w3c_credential_get_integrity_proof_details: [
+    FFI_ERROR_CODE,
+    [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+  anoncreds_w3c_credential_proof_get_attribute: [
+    FFI_ERROR_CODE,
+    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_STRING))],
+  ],
+
+  // Presentation request operations
+  anoncreds_presentation_request_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
+  ],
+
+  // Presentation operations
+  anoncreds_create_presentation: [
+    FFI_ERROR_CODE,
+    [
+      FFI_OBJECT_HANDLE,
+      CredentialEntryStructList,
+      CredentialProveStructList,
+      StringListStruct,
+      StringListStruct,
+      FFI_STRING,
+      ObjectHandleList,
+      StringListStruct,
+      ObjectHandleList,
+      StringListStruct,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+    ],
+  ],
+  anoncreds_presentation_from_json: [FFI_ERROR_CODE, [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))]],
+  anoncreds_verify_presentation: [
+    FFI_ERROR_CODE,
+    [
+      FFI_OBJECT_HANDLE,
+      FFI_OBJECT_HANDLE,
+      ObjectHandleList,
+      StringListStruct,
+      ObjectHandleList,
+      StringListStruct,
+      ObjectHandleList,
+      StringListStruct,
+      ObjectHandleList,
+      NonrevokedIntervalOverrideStructList,
+      koffi.out(koffi.pointer(FFI_INT8)),
+    ],
+  ],
+
+  // W3C Presentation operations
+  anoncreds_create_w3c_presentation: [
+    FFI_ERROR_CODE,
+    [
+      FFI_OBJECT_HANDLE,
+      CredentialEntryStructList,
+      CredentialProveStructList,
+      FFI_STRING,
+      ObjectHandleList,
+      StringListStruct,
+      ObjectHandleList,
+      StringListStruct,
+      FFI_STRING,
+      koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
+    ],
+  ],
+  anoncreds_w3c_presentation_from_json: [
+    FFI_ERROR_CODE,
+    [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))],
   ],
   anoncreds_verify_w3c_presentation: [
-    FFI_ERRORCODE,
+    FFI_ERROR_CODE,
     [
       FFI_OBJECT_HANDLE,
       FFI_OBJECT_HANDLE,
-      ObjectHandleListStruct,
+      ObjectHandleList,
       StringListStruct,
-      ObjectHandleListStruct,
+      ObjectHandleList,
       StringListStruct,
-      ObjectHandleListStruct,
+      ObjectHandleList,
       StringListStruct,
-      ObjectHandleListStruct,
-      NonRevokedIntervalOverrideListStruct,
-      FFI_INT8_PTR,
+      ObjectHandleList,
+      NonrevokedIntervalOverrideStructList,
+      koffi.out(koffi.pointer(FFI_INT8)),
     ],
   ],
-  anoncreds_credential_to_w3c: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, FFI_STRING, FFI_STRING, FFI_OBJECT_HANDLE_PTR]],
-  anoncreds_credential_from_w3c: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE_PTR]],
-  anoncreds_w3c_credential_get_integrity_proof_details: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, FFI_OBJECT_HANDLE_PTR]],
-  anoncreds_w3c_credential_proof_get_attribute: [FFI_ERRORCODE, [FFI_OBJECT_HANDLE, FFI_STRING, FFI_STRING_PTR]],
-  anoncreds_w3c_presentation_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
-  anoncreds_w3c_credential_from_json: [FFI_ERRORCODE, [ByteBufferStruct, FFI_STRING_PTR]],
 } as const

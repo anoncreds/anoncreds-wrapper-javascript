@@ -1,10 +1,8 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import koffi from 'koffi'
 import type { NativeMethods } from './NativeBindingInterface'
-
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import { Library } from '@2060.io/ffi-napi'
-
 import { nativeBindings } from './bindings'
 
 const LIBNAME = 'anoncreds'
@@ -51,26 +49,32 @@ const getLibrary = () => {
   if (pathFromEnvironment) platformPaths.unshift(pathFromEnvironment)
 
   // Create the path + file
-  const libaries = platformPaths.map((p) =>
+  const libraries = platformPaths.map((p) =>
     path.join(p, `${extensions[platform].prefix ?? ''}${LIBNAME}${extensions[platform].extension}`)
   )
 
-  // Gaurd so we quit if there is no valid path for the library
-  if (!libaries.some(doesPathExist))
-    throw new Error(`Could not find ${LIBNAME} with these paths: ${libaries.join(' ')}`)
+  // Guard so we quit if there is no valid path for the library
+  if (!libraries.some((libraryPath) => doesPathExist(libraryPath)))
+    throw new Error(`Could not find ${LIBNAME} with these paths: ${libraries.join(' ')}`)
 
   // Get the first valid library
   // Casting here as a string because there is a guard of none of the paths
-  const validLibraryPath = libaries.find((l) => doesPathExist(l)) as string
+  const validLibraryPath = libraries.find((l) => doesPathExist(l)) as string
 
-  // TODO
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  return Library(validLibraryPath, nativeBindings)
+  // Load the library using koffi
+  const lib = koffi.load(validLibraryPath)
+
+  // Bind all the native functions
+  const methods: Partial<NativeMethods> = {}
+  for (const [name, [returnType, argumentTypes]] of Object.entries(nativeBindings)) {
+    methods[name as keyof NativeMethods] = lib.func(name, returnType, argumentTypes)
+  }
+
+  return methods as NativeMethods
 }
 
-let nativeAnoncreds: NativeMethods | undefined
-export const getNativeAnoncreds = () => {
-  if (!nativeAnoncreds) nativeAnoncreds = getLibrary() as unknown as NativeMethods
-  return nativeAnoncreds
+let nativeAnonCreds: NativeMethods | undefined
+export const getNativeAnonCreds = () => {
+  if (!nativeAnonCreds) nativeAnonCreds = getLibrary()
+  return nativeAnonCreds
 }

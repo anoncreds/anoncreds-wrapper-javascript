@@ -1,3 +1,4 @@
+import { TextDecoder, TextEncoder } from 'node:util'
 import type {
   Anoncreds,
   AnoncredsErrorObject,
@@ -6,62 +7,74 @@ import type {
   NativeCredentialRevocationConfig,
   NativeNonRevokedIntervalOverride,
 } from '@hyperledger/anoncreds-shared'
-import type { TypedArray } from 'ref-array-di'
-import type { StructObject } from 'ref-struct-di'
-
-import { TextDecoder, TextEncoder } from 'util'
-import { AnoncredsError, ByteBuffer, ObjectHandle } from '@hyperledger/anoncreds-shared'
-
+import { AnoncredsError, ObjectHandle } from '@hyperledger/anoncreds-shared'
 import {
-  CredRevInfoStruct,
-  CredentialEntryListStruct,
-  CredentialEntryStruct,
-  CredentialProveListStruct,
-  CredentialProveStruct,
-  NonRevokedIntervalOverrideListStruct,
-  NonRevokedIntervalOverrideStruct,
-  ObjectHandleArray,
-  ObjectHandleListStruct,
-  StringListStruct,
+  type ByteBufferStructType,
   allocateByteBuffer,
   allocateInt8Buffer,
   allocatePointer,
   allocateStringBuffer,
-  byteBufferToBuffer,
+  byteBufferToUint8Array,
   serializeArguments,
 } from './ffi'
-import { getNativeAnoncreds } from './library'
+import { getNativeAnonCreds } from './library'
 
-function handleReturnPointer<Return>(returnValue: Buffer, cleanupCallback?: (buffer: Buffer) => void): Return {
-  if (returnValue.address() === 0) {
+function handleReturnPointer<Return>(returnValue: [unknown] | unknown): Return {
+  const value = Array.isArray(returnValue) ? returnValue[0] : returnValue
+  if (value === null || value === undefined) {
     throw AnoncredsError.customError({ message: 'Unexpected null pointer' })
   }
 
-  const ret = returnValue.deref() as Return
-  if (cleanupCallback) cleanupCallback(returnValue)
-
-  return ret
+  return value as Return
 }
 
 export class NodeJSAnoncreds implements Anoncreds {
-  private handleError() {
-    const nativeError = allocateStringBuffer()
-    getNativeAnoncreds().anoncreds_get_current_error(nativeError)
-    const anoncredsErrorObject = JSON.parse(nativeError.deref() as string) as AnoncredsErrorObject
-
-    if (anoncredsErrorObject.code === 0) return
-
-    throw new AnoncredsError(anoncredsErrorObject)
+  public get nativeAnoncreds() {
+    return getNativeAnonCreds()
   }
 
-  public get nativeAnoncreds() {
-    return getNativeAnoncreds()
+  /**
+   * Fetch the error from the native library and throw it as a JS error
+   *
+   * NOTE:
+   * Checks whether the error code of the returned error matches the error code that was passed to the function.
+   * If it doesn't, we throw an error with the original errorCode, and a custom message explaining we weren't able
+   * to retrieve the error message from the native library. This should however not break functionality as long as
+   * error codes are used rather than error messages for error handling.
+   *
+   */
+  private getAnoncredsError(errorCode: number): AnoncredsError {
+    const error = this.getCurrentError()
+    if (error.code !== errorCode) {
+      return new AnoncredsError({
+        code: errorCode,
+        message:
+          'Error details have already been overwritten on the native side, unable to retrieve error message for the error',
+      })
+    }
+
+    return new AnoncredsError(error)
+  }
+
+  public getCurrentError(): AnoncredsErrorObject {
+    const error = allocateStringBuffer()
+    this.nativeAnoncreds.anoncreds_get_current_error(error)
+    const serializedError = handleReturnPointer<string>(error)
+
+    return JSON.parse(serializedError) as AnoncredsErrorObject
+  }
+
+  private handleError(errorCode: number) {
+    if (errorCode === 0) return
+
+    throw this.getAnoncredsError(errorCode)
   }
 
   public generateNonce(): string {
     const ret = allocateStringBuffer()
-    this.nativeAnoncreds.anoncreds_generate_nonce(ret)
-    this.handleError()
+
+    const errorCode = this.nativeAnoncreds.anoncreds_generate_nonce(ret)
+    this.handleError(errorCode)
 
     return handleReturnPointer<string>(ret)
   }
@@ -76,8 +89,8 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_schema(name, version, issuerId, attributeNames, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_create_schema(name, version, issuerId, attributeNames, ret)
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -86,8 +99,12 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { objectHandle, name } = serializeArguments(options)
 
     const ret = allocateStringBuffer()
-    this.nativeAnoncreds.anoncreds_revocation_registry_definition_get_attribute(objectHandle, name, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_revocation_registry_definition_get_attribute(
+      objectHandle,
+      name,
+      ret
+    )
+    this.handleError(errorCode)
 
     return handleReturnPointer<string>(ret)
   }
@@ -96,8 +113,8 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { objectHandle, name } = serializeArguments(options)
 
     const ret = allocateStringBuffer()
-    this.nativeAnoncreds.anoncreds_credential_get_attribute(objectHandle, name, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_credential_get_attribute(objectHandle, name, ret)
+    this.handleError(errorCode)
 
     return handleReturnPointer<string>(ret)
   }
@@ -120,7 +137,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const credentialDefinitionPrivatePtr = allocatePointer()
     const keyCorrectnessProofPtr = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_credential_definition(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_credential_definition(
       schemaId,
       schema,
       tag,
@@ -131,7 +148,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       credentialDefinitionPrivatePtr,
       keyCorrectnessProofPtr
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return {
       credentialDefinition: new ObjectHandle(handleReturnPointer<number>(credentialDefinitionPtr)),
@@ -152,24 +169,48 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { credentialDefinition, credentialDefinitionPrivate, credentialOffer, credentialRequest } =
       serializeArguments(options)
 
-    const attributeNames = this.convertAttributeNames(options.attributeRawValues)
-    const attributeRawValues = this.convertAttributeRawValues(options.attributeRawValues)
-    const attributeEncodedValues = this.convertAttributeEncodedValues(options.attributeEncodedValues)
-    const revocationConfiguration = this.convertRevocationConfiguration(options.revocationConfiguration)
+    const attributeNames = {
+      count: Object.keys(options.attributeRawValues).length,
+      data: Object.keys(options.attributeRawValues),
+    }
+
+    const attributeRawValues = {
+      count: Object.keys(options.attributeRawValues).length,
+      data: Object.values(options.attributeRawValues),
+    }
+
+    const attributeEncodedValues = options.attributeEncodedValues
+      ? {
+          count: Object.keys(options.attributeEncodedValues).length,
+          data: Object.values(options.attributeEncodedValues),
+        }
+      : {}
+
+    let revocationConfiguration = null
+    if (options.revocationConfiguration) {
+      const { revocationStatusList, revocationRegistryDefinitionPrivate, revocationRegistryDefinition, registryIndex } =
+        serializeArguments(options.revocationConfiguration)
+      revocationConfiguration = {
+        reg_def: revocationRegistryDefinition,
+        reg_def_private: revocationRegistryDefinitionPrivate,
+        status_list: revocationStatusList,
+        reg_idx: registryIndex,
+      }
+    }
 
     const credentialPtr = allocatePointer()
-    this.nativeAnoncreds.anoncreds_create_credential(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_credential(
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
       credentialRequest,
       attributeNames,
       attributeRawValues,
-      attributeEncodedValues as unknown as Buffer,
-      revocationConfiguration?.ref().address() ?? 0,
+      attributeEncodedValues,
+      revocationConfiguration,
       credentialPtr
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(credentialPtr))
   }
@@ -179,8 +220,8 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocateStringBuffer()
 
-    this.nativeAnoncreds.anoncreds_encode_credential_attributes(attributeRawValues, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_encode_credential_attributes(attributeRawValues, ret)
+    this.handleError(errorCode)
 
     const result = handleReturnPointer<string>(ret)
 
@@ -198,7 +239,7 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_process_credential(
+    const errorCode = this.nativeAnoncreds.anoncreds_process_credential(
       credential,
       credentialRequestMetadata,
       linkSecret,
@@ -206,7 +247,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       options.revocationRegistryDefinition?.handle ?? 0,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -219,8 +260,13 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { schemaId, credentialDefinitionId, keyCorrectnessProof } = serializeArguments(options)
 
     const ret = allocatePointer()
-    this.nativeAnoncreds.anoncreds_create_credential_offer(schemaId, credentialDefinitionId, keyCorrectnessProof, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_create_credential_offer(
+      schemaId,
+      credentialDefinitionId,
+      keyCorrectnessProof,
+      ret
+    )
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -239,7 +285,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const credentialRequestPtr = allocatePointer()
     const credentialRequestMetadataPtr = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_credential_request(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_credential_request(
       entropy,
       proverDid,
       credentialDefinition,
@@ -249,7 +295,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       credentialRequestPtr,
       credentialRequestMetadataPtr
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return {
       credentialRequest: new ObjectHandle(handleReturnPointer<number>(credentialRequestPtr)),
@@ -260,8 +306,8 @@ export class NodeJSAnoncreds implements Anoncreds {
   public createLinkSecret(): string {
     const ret = allocateStringBuffer()
 
-    this.nativeAnoncreds.anoncreds_create_link_secret(ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_create_link_secret(ret)
+    this.handleError(errorCode)
 
     return handleReturnPointer<string>(ret)
   }
@@ -277,15 +323,15 @@ export class NodeJSAnoncreds implements Anoncreds {
   }): ObjectHandle {
     const { presentationRequest, linkSecret } = serializeArguments(options)
 
-    const selfAttestNames = StringListStruct({
+    const selfAttestNames = {
       count: Object.keys(options.selfAttest).length,
-      data: Object.keys(options.selfAttest) as unknown as TypedArray<string>,
-    })
+      data: Object.keys(options.selfAttest),
+    }
 
-    const selfAttestValues = StringListStruct({
+    const selfAttestValues = {
       count: Object.values(options.selfAttest).length,
-      data: Object.values(options.selfAttest) as unknown as TypedArray<string>,
-    })
+      data: Object.values(options.selfAttest),
+    }
 
     const credentialEntryList = this.convertCredentialList(options.credentials)
     const credentialProveList = this.convertCredentialProves(options.credentialsProve)
@@ -294,7 +340,7 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_presentation(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_presentation(
       presentationRequest,
       credentialEntryList,
       credentialProveList,
@@ -307,7 +353,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       credentialDefinitionIds,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -340,20 +386,20 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocateInt8Buffer()
 
-    this.nativeAnoncreds.anoncreds_verify_presentation(
+    const errorCode = this.nativeAnoncreds.anoncreds_verify_presentation(
       presentation,
       presentationRequest,
       schemas,
       schemaIds,
       credentialDefinitions,
       credentialDefinitionIds,
-      revocationRegistryDefinitions,
-      revocationRegistryDefinitionIds,
-      revocationStatusLists,
+      revocationRegistryDefinitions ?? {},
+      revocationRegistryDefinitionIds ?? {},
+      revocationStatusLists ?? {},
       nonRevokedIntervalOverrideList,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return Boolean(handleReturnPointer<number>(ret))
   }
@@ -379,7 +425,7 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_revocation_status_list(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_revocation_status_list(
       credentialDefinition,
       revocationRegistryDefinitionId,
       revocationRegistryDefinition,
@@ -389,7 +435,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       timestamp ?? -1,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -401,12 +447,12 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { currentRevocationStatusList, timestamp } = serializeArguments(options)
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_update_revocation_status_list_timestamp_only(
+    const errorCode = this.nativeAnoncreds.anoncreds_update_revocation_status_list_timestamp_only(
       timestamp,
       currentRevocationStatusList,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -431,17 +477,17 @@ export class NodeJSAnoncreds implements Anoncreds {
     } = serializeArguments(options)
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_update_revocation_status_list(
+    const errorCode = this.nativeAnoncreds.anoncreds_update_revocation_status_list(
       credentialDefinition,
       revocationRegistryDefinition,
       revocationRegistryDefinitionPrivate,
       currentRevocationStatusList,
-      issued,
-      revoked,
+      issued ?? {},
+      revoked ?? {},
       timestamp ?? -1,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -468,7 +514,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const revocationRegistryDefinitionPtr = allocatePointer()
     const revocationRegistryDefinitionPrivate = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_revocation_registry_def(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_revocation_registry_def(
       credentialDefinition,
       credentialDefinitionId,
       issuerId,
@@ -479,7 +525,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       revocationRegistryDefinitionPtr,
       revocationRegistryDefinitionPrivate
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return {
       revocationRegistryDefinition: new ObjectHandle(handleReturnPointer<number>(revocationRegistryDefinitionPtr)),
@@ -504,7 +550,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const oldRevocationStatusList = options.oldRevocationStatusList ?? new ObjectHandle(0)
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_or_update_revocation_state(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_or_update_revocation_state(
       revocationRegistryDefinition,
       revocationStatusList,
       revocationRegistryIndex,
@@ -513,7 +559,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       oldRevocationStatusList.handle,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -535,18 +581,18 @@ export class NodeJSAnoncreds implements Anoncreds {
     const revocationConfiguration = this.convertRevocationConfiguration(options.revocationConfiguration)
 
     const credentialPtr = allocatePointer()
-    this.nativeAnoncreds.anoncreds_create_w3c_credential(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_w3c_credential(
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
       credentialRequest,
       attributeNames,
       attributeRawValues,
-      revocationConfiguration?.ref().address() ?? 0,
+      revocationConfiguration ?? 0,
       w3cVersion,
       credentialPtr
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(credentialPtr))
   }
@@ -562,7 +608,7 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_process_w3c_credential(
+    const errorCode = this.nativeAnoncreds.anoncreds_process_w3c_credential(
       credential,
       credentialRequestMetadata,
       linkSecret,
@@ -570,7 +616,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       options.revocationRegistryDefinition?.handle ?? 0,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -593,7 +639,7 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_create_w3c_presentation(
+    const errorCode = this.nativeAnoncreds.anoncreds_create_w3c_presentation(
       presentationRequest,
       credentialEntryList,
       credentialProveList,
@@ -605,7 +651,7 @@ export class NodeJSAnoncreds implements Anoncreds {
       w3cVersion,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -638,20 +684,20 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocateInt8Buffer()
 
-    this.nativeAnoncreds.anoncreds_verify_w3c_presentation(
+    const errorCode = this.nativeAnoncreds.anoncreds_verify_w3c_presentation(
       presentation,
       presentationRequest,
       schemas,
       schemaIds,
       credentialDefinitions,
       credentialDefinitionIds,
-      revocationRegistryDefinitions,
-      revocationRegistryDefinitionIds,
-      revocationStatusLists,
+      revocationRegistryDefinitions ?? {},
+      revocationRegistryDefinitionIds ?? {},
+      revocationStatusLists ?? {},
       nonRevokedIntervalOverrideList,
       ret
     )
-    this.handleError()
+    this.handleError(errorCode)
 
     return Boolean(handleReturnPointer<number>(ret))
   }
@@ -661,8 +707,8 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_credential_to_w3c(objectHandle, issuerId, w3cVersion, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_credential_to_w3c(objectHandle, issuerId, w3cVersion, ret)
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -672,8 +718,8 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocatePointer()
 
-    this.nativeAnoncreds.anoncreds_credential_from_w3c(objectHandle, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_credential_from_w3c(objectHandle, ret)
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -682,8 +728,8 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { objectHandle } = serializeArguments(options)
 
     const ret = allocatePointer()
-    this.nativeAnoncreds.anoncreds_w3c_credential_get_integrity_proof_details(objectHandle, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_w3c_credential_get_integrity_proof_details(objectHandle, ret)
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -692,8 +738,8 @@ export class NodeJSAnoncreds implements Anoncreds {
     const { objectHandle, name } = serializeArguments(options)
 
     const ret = allocateStringBuffer()
-    this.nativeAnoncreds.anoncreds_w3c_credential_proof_get_attribute(objectHandle, name, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_w3c_credential_proof_get_attribute(objectHandle, name, ret)
+    this.handleError(errorCode)
 
     return handleReturnPointer<string>(ret)
   }
@@ -711,26 +757,17 @@ export class NodeJSAnoncreds implements Anoncreds {
   }
 
   public setDefaultLogger(): void {
-    this.nativeAnoncreds.anoncreds_set_default_logger()
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_set_default_logger()
+    this.handleError(errorCode)
   }
 
-  // This should be called when a function returns a non-zero code
-  public getCurrentError(): string {
-    const ret = allocateStringBuffer()
-    this.nativeAnoncreds.anoncreds_get_current_error(ret)
-    this.handleError()
-
-    return handleReturnPointer<string>(ret)
-  }
-
-  private objectFromJson(method: (byteBuffer: Buffer, ret: Buffer) => unknown, options: { json: string }) {
+  private objectFromJson(cb: (byteBuffer: ByteBufferStructType, ret: [unknown]) => number, options: { json: string }) {
     const ret = allocatePointer()
 
-    const byteBuffer = ByteBuffer.fromUint8Array(new TextEncoder().encode(options.json))
-    this.handleError()
+    const byteBuffer = new TextEncoder().encode(options.json)
 
-    method(byteBuffer as unknown as Buffer, ret)
+    const errorCode = cb({ data: byteBuffer, len: byteBuffer.length }, ret)
+    this.handleError(errorCode)
 
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
@@ -796,18 +833,19 @@ export class NodeJSAnoncreds implements Anoncreds {
   }
 
   public getJson(options: { objectHandle: ObjectHandle }) {
+    const { objectHandle } = serializeArguments(options)
+
     const ret = allocateByteBuffer()
 
-    const { objectHandle } = serializeArguments(options)
-    this.nativeAnoncreds.anoncreds_object_get_json(objectHandle, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_object_get_json(objectHandle, ret)
+    this.handleError(errorCode)
 
-    const returnValue = handleReturnPointer<{ data: Buffer; len: number }>(ret)
-    const jsonAsArray = new Uint8Array(byteBufferToBuffer(returnValue))
+    const returnValue = handleReturnPointer<{ data: Uint8Array; len: number }>(ret)
+    const jsonAsArray = byteBufferToUint8Array(returnValue)
 
     const output = new TextDecoder().decode(jsonAsArray)
 
-    this.nativeAnoncreds.anoncreds_buffer_free(returnValue.data)
+    this.nativeAnoncreds.anoncreds_buffer_free(returnValue)
 
     return output
   }
@@ -817,87 +855,72 @@ export class NodeJSAnoncreds implements Anoncreds {
 
     const ret = allocateStringBuffer()
 
-    this.nativeAnoncreds.anoncreds_object_get_type_name(objectHandle, ret)
-    this.handleError()
+    const errorCode = this.nativeAnoncreds.anoncreds_object_get_type_name(objectHandle, ret)
+    this.handleError(errorCode)
 
     return handleReturnPointer<string>(ret)
   }
 
   public objectFree(options: { objectHandle: ObjectHandle }) {
     this.nativeAnoncreds.anoncreds_object_free(options.objectHandle.handle)
-    this.handleError()
   }
 
   private convertCredentialList(credentials: NativeCredentialEntry[]) {
-    const credentialEntries = credentials.map((value) =>
-      CredentialEntryStruct({
-        credential: value.credential.handle,
-        timestamp: value.timestamp ?? -1,
-        rev_state: value.revocationState?.handle ?? 0,
-      })
-    )
+    const credentialEntries = credentials.map((value) => ({
+      credential: value.credential.handle,
+      timestamp: value.timestamp ?? -1,
+      rev_state: value.revocationState?.handle ?? 0,
+    }))
 
-    return CredentialEntryListStruct({
+    return {
       count: credentialEntries.length,
-      data: credentialEntries as unknown as TypedArray<
-        StructObject<{
-          credential: number
-          timestamp: number
-          rev_state: number
-        }>
-      >,
-    }) as unknown as Buffer
+      data: credentialEntries,
+    }
   }
 
   private convertCredentialProves(credentialsProve: NativeCredentialProve[]) {
     const credentialProves = credentialsProve.map((value) => {
       const { entryIndex: entry_idx, isPredicate: is_predicate, reveal, referent } = serializeArguments(value)
-      return CredentialProveStruct({ entry_idx, referent, is_predicate, reveal })
+      return { entry_idx, referent, is_predicate, reveal }
     })
 
-    return CredentialProveListStruct({
+    return {
       count: credentialProves.length,
-      data: credentialProves as unknown as TypedArray<
-        StructObject<{
-          entry_idx: string | number
-          referent: string
-          is_predicate: number
-          reveal: number
-        }>
-      >,
-    }) as unknown as Buffer
+      data: credentialProves,
+    }
   }
 
   private convertSchemas(schemas: Record<string, ObjectHandle>) {
     const schemaKeys = Object.keys(schemas)
-    const schemaIds = StringListStruct({
+    const schemaIds = {
       count: schemaKeys.length,
-      data: schemaKeys as unknown as TypedArray<string>,
-    }) as unknown as Buffer
+      data: schemaKeys,
+    }
 
     const schemaValues = Object.values(schemas)
-    const schemasList = ObjectHandleListStruct({
-      count: schemaValues.length,
-      data: ObjectHandleArray(schemaValues.map((o) => o.handle)),
-    }) as unknown as Buffer
+
     return {
       schemaIds,
-      schemas: schemasList,
+      schemas: {
+        count: schemaValues.length,
+        data: schemaValues.map((o) => o.handle),
+      },
     }
   }
 
   private convertCredDefs(credentialDefinitions: Record<string, ObjectHandle>) {
     const credentialDefinitionKeys = Object.keys(credentialDefinitions)
-    const credentialDefinitionIds = StringListStruct({
+    const credentialDefinitionIds = {
       count: credentialDefinitionKeys.length,
-      data: credentialDefinitionKeys as unknown as TypedArray<string>,
-    }) as unknown as Buffer
+      data: credentialDefinitionKeys,
+    }
 
     const credentialDefinitionValues = Object.values(credentialDefinitions)
-    const credentialDefinitionsList = ObjectHandleListStruct({
+    const credentialDefinitionsList = {
       count: credentialDefinitionValues.length,
-      data: ObjectHandleArray(credentialDefinitionValues.map((o) => o.handle)),
-    }) as unknown as Buffer
+      data: credentialDefinitionValues.map((o) => o.handle),
+    }
+
     return {
       credentialDefinitionIds,
       credentialDefinitions: credentialDefinitionsList,
@@ -908,45 +931,39 @@ export class NodeJSAnoncreds implements Anoncreds {
     const nativeNonRevokedIntervalOverrides = nonRevokedIntervalOverrides?.map((value) => {
       const { requestedFromTimestamp, revocationRegistryDefinitionId, overrideRevocationStatusListTimestamp } =
         serializeArguments(value)
-      return NonRevokedIntervalOverrideStruct({
+      return {
         rev_reg_def_id: revocationRegistryDefinitionId,
         requested_from_ts: requestedFromTimestamp,
         override_rev_status_list_ts: overrideRevocationStatusListTimestamp,
-      })
+      }
     })
 
-    return NonRevokedIntervalOverrideListStruct({
+    return {
       count: nonRevokedIntervalOverrides?.length ?? 0,
-      data: nativeNonRevokedIntervalOverrides as unknown as TypedArray<
-        StructObject<{
-          rev_reg_def_id: string
-          requested_from_ts: number
-          override_rev_status_list_ts: number
-        }>
-      >,
-    }) as unknown as Buffer
+      data: nativeNonRevokedIntervalOverrides,
+    }
   }
 
   private convertAttributeNames(attributeRawValues: Record<string, string>) {
-    return StringListStruct({
+    return {
       count: Object.keys(attributeRawValues).length,
-      data: Object.keys(attributeRawValues) as unknown as TypedArray<string>,
-    }) as unknown as Buffer
+      data: Object.keys(attributeRawValues),
+    }
   }
 
   private convertAttributeRawValues(attributeRawValues: Record<string, string>) {
-    return StringListStruct({
+    return {
       count: Object.keys(attributeRawValues).length,
-      data: Object.values(attributeRawValues) as unknown as TypedArray<string>,
-    }) as unknown as Buffer
+      data: Object.values(attributeRawValues),
+    }
   }
 
   private convertAttributeEncodedValues(attributeEncodedValues?: Record<string, string>) {
     return attributeEncodedValues
-      ? StringListStruct({
+      ? {
           count: Object.keys(attributeEncodedValues).length,
-          data: Object.values(attributeEncodedValues) as unknown as TypedArray<string>,
-        })
+          data: Object.values(attributeEncodedValues),
+        }
       : undefined
   }
 
@@ -955,12 +972,12 @@ export class NodeJSAnoncreds implements Anoncreds {
       const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate, revocationStatusList, registryIndex } =
         serializeArguments(revocationConfiguration)
 
-      return CredRevInfoStruct({
+      return {
         reg_def: revocationRegistryDefinition,
         reg_def_private: revocationRegistryDefinitionPrivate,
         status_list: revocationStatusList,
         reg_idx: registryIndex,
-      })
+      }
     }
   }
 }

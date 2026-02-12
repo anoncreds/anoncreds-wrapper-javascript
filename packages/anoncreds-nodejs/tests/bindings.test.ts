@@ -1,26 +1,23 @@
-import { deepStrictEqual, ok, strictEqual } from 'node:assert'
-import { before, describe, test } from 'node:test'
-import { anoncreds } from '@hyperledger/anoncreds-shared'
-import { setup } from './utils'
+import { NativeAnoncreds } from '@hyperledger/anoncreds-shared'
+import { describe, expect, test } from 'vitest'
 
 const ENTROPY = 'entropy'
 
 describe('bindings', () => {
-  before(setup)
-
   test('current error', () => {
-    const error = anoncreds.getCurrentError()
+    const error = NativeAnoncreds.instance.getCurrentError()
 
-    deepStrictEqual(JSON.parse(error), {
+    expect(error).toStrictEqual({
       code: 0,
       message: null,
     })
   })
 
   test('generate nonce', () => {
-    const nonce = anoncreds.generateNonce()
+    const nonce = NativeAnoncreds.instance.generateNonce()
 
-    ok(!Number.isNaN(Number(nonce)))
+    expect(nonce).toBeTypeOf('string')
+    expect(nonce.length).toBeGreaterThan(1)
   })
 
   test('create schema', () => {
@@ -30,11 +27,12 @@ describe('bindings', () => {
       version: '1',
       attributeNames: ['attr-1'],
     }
-    const schemaObj = anoncreds.createSchema(obj)
 
-    const json = anoncreds.getJson({ objectHandle: schemaObj })
+    const schemaObj = NativeAnoncreds.instance.createSchema(obj)
 
-    deepStrictEqual(JSON.parse(json), {
+    const json = NativeAnoncreds.instance.getJson({ objectHandle: schemaObj })
+
+    expect(JSON.parse(json)).toStrictEqual({
       name: 'schema-1',
       version: '1',
       issuerId: 'mock:uri',
@@ -43,7 +41,7 @@ describe('bindings', () => {
   })
 
   test('create credential definition', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -51,7 +49,7 @@ describe('bindings', () => {
     })
 
     const { keyCorrectnessProof, credentialDefinition, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -60,40 +58,43 @@ describe('bindings', () => {
         tag: 'TAG',
       })
 
-    const credDefJson = anoncreds.getJson({ objectHandle: credentialDefinition })
-    strictEqual(JSON.parse(credDefJson).tag, 'TAG')
-    strictEqual(JSON.parse(credDefJson).type, 'CL')
-    strictEqual(JSON.parse(credDefJson).schemaId, 'mock:uri')
-    strictEqual(JSON.parse(credDefJson).issuerId, 'mock:uri')
+    const credDefJson = JSON.parse(NativeAnoncreds.instance.getJson({ objectHandle: credentialDefinition }))
 
-    const credDefPvtJson = anoncreds.getJson({ objectHandle: credentialDefinitionPrivate })
+    expect(credDefJson).toMatchObject({
+      tag: 'TAG',
+      type: 'CL',
+      schemaId: 'mock:uri',
+      issuerId: 'mock:uri',
+    })
 
-    ok(JSON.parse(credDefPvtJson).value)
+    const credDefPvtJson = JSON.parse(NativeAnoncreds.instance.getJson({ objectHandle: credentialDefinitionPrivate }))
 
-    const keyCorrectnessProofJson = anoncreds.getJson({ objectHandle: keyCorrectnessProof })
+    expect(credDefPvtJson).toHaveProperty('value')
 
-    ok(JSON.parse(keyCorrectnessProofJson).c)
-    ok(JSON.parse(keyCorrectnessProofJson).xr_cap)
+    const keyCorrectnessProofJson = JSON.parse(NativeAnoncreds.instance.getJson({ objectHandle: keyCorrectnessProof }))
+
+    expect(keyCorrectnessProofJson).toHaveProperty('c')
+    expect(keyCorrectnessProofJson).toHaveProperty('xr_cap')
   })
 
   test('encode credential attributes', () => {
-    const encoded = anoncreds.encodeCredentialAttributes({ attributeRawValues: ['value2', 'value1'] })
+    const encoded = NativeAnoncreds.instance.encodeCredentialAttributes({ attributeRawValues: ['value2', 'value1'] })
 
-    deepStrictEqual(encoded, [
+    expect(encoded).toMatchObject([
       '2360207505573967335061705667247358223962382058438765247085581582985596391831',
       '27404702143883897701950953229849815393032792099783647152371385368148256400014',
     ])
   })
 
   test('create revocation registry', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
       attributeNames: ['attr-1'],
     })
 
-    const { credentialDefinition } = anoncreds.createCredentialDefinition({
+    const { credentialDefinition } = NativeAnoncreds.instance.createCredentialDefinition({
       schemaId: 'mock:uri',
       issuerId: 'mock:uri',
       schema: schemaObj,
@@ -102,7 +103,7 @@ describe('bindings', () => {
       tag: 'TAG',
     })
 
-    const { revocationRegistryDefinition } = anoncreds.createRevocationRegistryDefinition({
+    const { revocationRegistryDefinition } = NativeAnoncreds.instance.createRevocationRegistryDefinition({
       credentialDefinitionId: 'mock:uri',
       credentialDefinition,
       issuerId: 'mock:uri',
@@ -111,33 +112,41 @@ describe('bindings', () => {
       maximumCredentialNumber: 100,
     })
 
-    const maximumCredentialNumber = anoncreds.revocationRegistryDefinitionGetAttribute({
+    const maximumCredentialNumber = NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
       objectHandle: revocationRegistryDefinition,
       name: 'max_cred_num',
     })
 
-    strictEqual(maximumCredentialNumber, '100')
-    const json = anoncreds.getJson({ objectHandle: revocationRegistryDefinition })
-    strictEqual(JSON.parse(json).credDefId, 'mock:uri')
-    strictEqual(JSON.parse(json).revocDefType, 'CL_ACCUM')
-    strictEqual(JSON.parse(json).tag, 'default')
-    strictEqual(JSON.parse(json).value.maxCredNum, 100)
+    expect(maximumCredentialNumber).toStrictEqual('100')
+
+    const json = JSON.parse(NativeAnoncreds.instance.getJson({ objectHandle: revocationRegistryDefinition }))
+
+    expect(json).toMatchObject({
+      credDefId: 'mock:uri',
+      revocDefType: 'CL_ACCUM',
+      tag: 'default',
+      value: {
+        maxCredNum: 100,
+      },
+    })
   })
 
   test('create link secret', () => {
-    const linkSecret = anoncreds.createLinkSecret()
-    ok(typeof linkSecret === 'string')
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
+
+    expect(linkSecret.length).toBeGreaterThan(1)
+    expect(linkSecret).toBeTypeOf('string')
   })
 
   test('create credential offer', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
       attributeNames: ['attr-1'],
     })
 
-    const { keyCorrectnessProof } = anoncreds.createCredentialDefinition({
+    const { keyCorrectnessProof } = NativeAnoncreds.instance.createCredentialDefinition({
       schemaId: 'mock:uri',
       schema: schemaObj,
       issuerId: 'mock:uri',
@@ -146,29 +155,30 @@ describe('bindings', () => {
       tag: 'TAG',
     })
 
-    const credOfferObj = anoncreds.createCredentialOffer({
+    const credOfferObj = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const json = anoncreds.getJson({ objectHandle: credOfferObj })
-    strictEqual(JSON.parse(json).cred_def_id, 'mock:uri')
-    strictEqual(JSON.parse(json).schema_id, 'mock:uri')
-
-    ok(JSON.parse(json).nonce)
-    ok(JSON.parse(json).key_correctness_proof)
+    const json = JSON.parse(NativeAnoncreds.instance.getJson({ objectHandle: credOfferObj }))
+    expect(json).toMatchObject({
+      cred_def_id: 'mock:uri',
+      schema_id: 'mock:uri',
+      nonce: expect.anything(),
+      key_correctness_proof: expect.anything(),
+    })
   })
 
   test('create credential request', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
       attributeNames: ['attr-1'],
     })
 
-    const { credentialDefinition, keyCorrectnessProof } = anoncreds.createCredentialDefinition({
+    const { credentialDefinition, keyCorrectnessProof } = NativeAnoncreds.instance.createCredentialDefinition({
       schemaId: 'mock:uri',
       issuerId: 'mock:uri',
       schema: schemaObj,
@@ -177,16 +187,16 @@ describe('bindings', () => {
       tag: 'TAG',
     })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequest, credentialRequestMetadata } = anoncreds.createCredentialRequest({
+    const { credentialRequest, credentialRequestMetadata } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -194,22 +204,23 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credReqJson = anoncreds.getJson({ objectHandle: credentialRequest })
+    const credReqJson = NativeAnoncreds.instance.getJson({ objectHandle: credentialRequest })
+    const credReqParsed = JSON.parse(credReqJson)
 
-    strictEqual(JSON.parse(credReqJson).cred_def_id, 'mock:uri')
+    expect(credReqParsed.cred_def_id).toBe('mock:uri')
+    expect(credReqParsed.blinded_ms).toBeDefined()
+    expect(credReqParsed.nonce).toBeDefined()
 
-    ok(JSON.parse(credReqJson).blinded_ms)
-    ok(JSON.parse(credReqJson).nonce)
+    const credReqMetadataJson = NativeAnoncreds.instance.getJson({ objectHandle: credentialRequestMetadata })
+    const credReqMetadataParsed = JSON.parse(credReqMetadataJson)
 
-    const credReqMetadataJson = anoncreds.getJson({ objectHandle: credentialRequestMetadata })
-    strictEqual(JSON.parse(credReqMetadataJson).link_secret_name, linkSecretId)
-
-    ok(JSON.parse(credReqMetadataJson).link_secret_blinding_data)
-    ok(JSON.parse(credReqMetadataJson).nonce)
+    expect(credReqMetadataParsed.link_secret_name).toBe(linkSecretId)
+    expect(credReqMetadataParsed.link_secret_blinding_data).toBeDefined()
+    expect(credReqMetadataParsed.nonce).toBeDefined()
   })
 
   test('create and receive credential', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -217,7 +228,7 @@ describe('bindings', () => {
     })
 
     const { credentialDefinition, keyCorrectnessProof, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -227,7 +238,7 @@ describe('bindings', () => {
       })
 
     const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate } =
-      anoncreds.createRevocationRegistryDefinition({
+      NativeAnoncreds.instance.createRevocationRegistryDefinition({
         credentialDefinitionId: 'mock:uri',
         credentialDefinition,
         issuerId: 'mock:uri',
@@ -236,15 +247,15 @@ describe('bindings', () => {
         maximumCredentialNumber: 10,
       })
 
-    const tailsPath = anoncreds.revocationRegistryDefinitionGetAttribute({
+    const tailsPath = NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
       objectHandle: revocationRegistryDefinition,
       name: 'tails_location',
     })
 
-    ok(tailsPath)
+    expect(tailsPath).toBeDefined()
 
     const timeCreateRevStatusList = 12
-    const revocationStatusList = anoncreds.createRevocationStatusList({
+    const revocationStatusList = NativeAnoncreds.instance.createRevocationStatusList({
       credentialDefinition,
       revocationRegistryDefinitionId: 'mock:uri',
       revocationRegistryDefinition,
@@ -254,16 +265,16 @@ describe('bindings', () => {
       timestamp: timeCreateRevStatusList,
     })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequestMetadata, credentialRequest } = anoncreds.createCredentialRequest({
+    const { credentialRequestMetadata, credentialRequest } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -271,7 +282,7 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credential = anoncreds.createCredential({
+    const credential = NativeAnoncreds.instance.createCredential({
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
@@ -285,7 +296,7 @@ describe('bindings', () => {
       },
     })
 
-    const credReceived = anoncreds.processCredential({
+    const credReceived = NativeAnoncreds.instance.processCredential({
       credential,
       credentialDefinition,
       credentialRequestMetadata,
@@ -293,24 +304,25 @@ describe('bindings', () => {
       revocationRegistryDefinition,
     })
 
-    const credJson = anoncreds.getJson({ objectHandle: credential })
+    const credJson = NativeAnoncreds.instance.getJson({ objectHandle: credential })
+    const credParsed = JSON.parse(credJson)
 
-    strictEqual(JSON.parse(credJson).cred_def_id, 'mock:uri')
-    strictEqual(JSON.parse(credJson).schema_id, 'mock:uri')
-    strictEqual(JSON.parse(credJson).rev_reg_id, 'mock:uri')
+    expect(credParsed.cred_def_id).toBe('mock:uri')
+    expect(credParsed.schema_id).toBe('mock:uri')
+    expect(credParsed.rev_reg_id).toBe('mock:uri')
 
-    const credReceivedJson = anoncreds.getJson({ objectHandle: credReceived })
+    const credReceivedJson = NativeAnoncreds.instance.getJson({ objectHandle: credReceived })
+    const credReceivedParsed = JSON.parse(credReceivedJson)
 
-    strictEqual(JSON.parse(credReceivedJson).cred_def_id, 'mock:uri')
-    strictEqual(JSON.parse(credReceivedJson).schema_id, 'mock:uri')
-    strictEqual(JSON.parse(credReceivedJson).rev_reg_id, 'mock:uri')
-
-    ok(JSON.parse(credReceivedJson).signature)
-    ok(JSON.parse(credReceivedJson).witness)
+    expect(credReceivedParsed.cred_def_id).toBe('mock:uri')
+    expect(credReceivedParsed.schema_id).toBe('mock:uri')
+    expect(credReceivedParsed.rev_reg_id).toBe('mock:uri')
+    expect(credReceivedParsed.signature).toBeDefined()
+    expect(credReceivedParsed.witness).toBeDefined()
   })
 
   test('create and receive w3c credential', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -318,7 +330,7 @@ describe('bindings', () => {
     })
 
     const { credentialDefinition, keyCorrectnessProof, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -328,7 +340,7 @@ describe('bindings', () => {
       })
 
     const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate } =
-      anoncreds.createRevocationRegistryDefinition({
+      NativeAnoncreds.instance.createRevocationRegistryDefinition({
         credentialDefinitionId: 'mock:uri',
         credentialDefinition,
         issuerId: 'mock:uri',
@@ -337,14 +349,14 @@ describe('bindings', () => {
         maximumCredentialNumber: 10,
       })
 
-    const tailsPath = anoncreds.revocationRegistryDefinitionGetAttribute({
+    const tailsPath = NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
       objectHandle: revocationRegistryDefinition,
       name: 'tails_location',
     })
-    ok(tailsPath)
+    expect(tailsPath).toBeDefined()
 
     const timeCreateRevStatusList = 12
-    const revocationStatusList = anoncreds.createRevocationStatusList({
+    const revocationStatusList = NativeAnoncreds.instance.createRevocationStatusList({
       credentialDefinition,
       revocationRegistryDefinitionId: 'mock:uri',
       revocationRegistryDefinition,
@@ -354,16 +366,16 @@ describe('bindings', () => {
       timestamp: timeCreateRevStatusList,
     })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequestMetadata, credentialRequest } = anoncreds.createCredentialRequest({
+    const { credentialRequestMetadata, credentialRequest } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -371,7 +383,7 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credential = anoncreds.createW3cCredential({
+    const credential = NativeAnoncreds.instance.createW3cCredential({
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
@@ -387,7 +399,7 @@ describe('bindings', () => {
       encoding: undefined,
     })
 
-    const credReceived = anoncreds.processW3cCredential({
+    const credReceived = NativeAnoncreds.instance.processW3cCredential({
       credential,
       credentialDefinition,
       credentialRequestMetadata,
@@ -395,13 +407,14 @@ describe('bindings', () => {
       revocationRegistryDefinition,
     })
 
-    anoncreds.getJson({ objectHandle: credReceived })
+    const credReceivedJson = NativeAnoncreds.instance.getJson({ objectHandle: credReceived })
+    expect(credReceivedJson).toBeDefined()
   })
 
   test('create and verify presentation', () => {
-    const nonce = anoncreds.generateNonce()
+    const nonce = NativeAnoncreds.instance.generateNonce()
 
-    const presentationRequest = anoncreds.presentationRequestFromJson({
+    const presentationRequest = NativeAnoncreds.instance.presentationRequestFromJson({
       json: JSON.stringify({
         nonce,
         name: 'pres_req_1',
@@ -428,9 +441,9 @@ describe('bindings', () => {
       }),
     })
 
-    strictEqual(anoncreds.getTypeName({ objectHandle: presentationRequest }), 'PresentationRequest')
+    expect(NativeAnoncreds.instance.getTypeName({ objectHandle: presentationRequest })).toBe('PresentationRequest')
 
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -438,7 +451,7 @@ describe('bindings', () => {
     })
 
     const { credentialDefinition, keyCorrectnessProof, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -448,7 +461,7 @@ describe('bindings', () => {
       })
 
     const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate } =
-      anoncreds.createRevocationRegistryDefinition({
+      NativeAnoncreds.instance.createRevocationRegistryDefinition({
         credentialDefinitionId: 'mock:uri',
         credentialDefinition,
         issuerId: 'mock:uri',
@@ -457,13 +470,13 @@ describe('bindings', () => {
         maximumCredentialNumber: 10,
       })
 
-    const tailsPath = anoncreds.revocationRegistryDefinitionGetAttribute({
+    const tailsPath = NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
       objectHandle: revocationRegistryDefinition,
       name: 'tails_location',
     })
 
     const timeCreateRevStatusList = 12
-    const revocationStatusList = anoncreds.createRevocationStatusList({
+    const revocationStatusList = NativeAnoncreds.instance.createRevocationStatusList({
       credentialDefinition,
       revocationRegistryDefinitionId: 'mock:uri',
       revocationRegistryDefinition,
@@ -473,16 +486,16 @@ describe('bindings', () => {
       timestamp: timeCreateRevStatusList,
     })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequestMetadata, credentialRequest } = anoncreds.createCredentialRequest({
+    const { credentialRequestMetadata, credentialRequest } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -490,7 +503,7 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credential = anoncreds.createCredential({
+    const credential = NativeAnoncreds.instance.createCredential({
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
@@ -504,7 +517,7 @@ describe('bindings', () => {
       },
     })
 
-    const credentialReceived = anoncreds.processCredential({
+    const credentialReceived = NativeAnoncreds.instance.processCredential({
       credential,
       credentialDefinition,
       credentialRequestMetadata,
@@ -512,21 +525,21 @@ describe('bindings', () => {
       revocationRegistryDefinition,
     })
 
-    const revRegIndex = anoncreds.credentialGetAttribute({
+    const revRegIndex = NativeAnoncreds.instance.credentialGetAttribute({
       objectHandle: credentialReceived,
       name: 'rev_reg_index',
     })
 
     const revocationRegistryIndex = revRegIndex === null ? 0 : Number.parseInt(revRegIndex)
 
-    const revocationState = anoncreds.createOrUpdateRevocationState({
+    const revocationState = NativeAnoncreds.instance.createOrUpdateRevocationState({
       revocationRegistryDefinition,
       revocationStatusList,
       revocationRegistryIndex,
       tailsPath,
     })
 
-    const presentation = anoncreds.createPresentation({
+    const presentation = NativeAnoncreds.instance.createPresentation({
       presentationRequest,
       credentials: [
         {
@@ -567,9 +580,9 @@ describe('bindings', () => {
       selfAttest: { attr3_referent: '8-800-300' },
     })
 
-    ok(typeof presentation.handle === 'number')
+    expect(typeof presentation.handle).toBe('number')
 
-    const verify = anoncreds.verifyPresentation({
+    const verify = NativeAnoncreds.instance.verifyPresentation({
       presentation,
       presentationRequest,
       schemas: [schemaObj],
@@ -581,13 +594,13 @@ describe('bindings', () => {
       revocationStatusLists: [revocationStatusList],
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 
   test('create and verify w3c presentation', () => {
-    const nonce = anoncreds.generateNonce()
+    const nonce = NativeAnoncreds.instance.generateNonce()
 
-    const presentationRequest = anoncreds.presentationRequestFromJson({
+    const presentationRequest = NativeAnoncreds.instance.presentationRequestFromJson({
       json: JSON.stringify({
         nonce,
         name: 'pres_req_1',
@@ -608,9 +621,9 @@ describe('bindings', () => {
       }),
     })
 
-    strictEqual(anoncreds.getTypeName({ objectHandle: presentationRequest }), 'PresentationRequest')
+    expect(NativeAnoncreds.instance.getTypeName({ objectHandle: presentationRequest })).toBe('PresentationRequest')
 
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -618,7 +631,7 @@ describe('bindings', () => {
     })
 
     const { credentialDefinition, keyCorrectnessProof, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -628,7 +641,7 @@ describe('bindings', () => {
       })
 
     const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate } =
-      anoncreds.createRevocationRegistryDefinition({
+      NativeAnoncreds.instance.createRevocationRegistryDefinition({
         credentialDefinitionId: 'mock:uri',
         credentialDefinition,
         issuerId: 'mock:uri',
@@ -637,13 +650,13 @@ describe('bindings', () => {
         maximumCredentialNumber: 10,
       })
 
-    const tailsPath = anoncreds.revocationRegistryDefinitionGetAttribute({
+    const tailsPath = NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
       objectHandle: revocationRegistryDefinition,
       name: 'tails_location',
     })
 
     const timeCreateRevStatusList = 12
-    const revocationStatusList = anoncreds.createRevocationStatusList({
+    const revocationStatusList = NativeAnoncreds.instance.createRevocationStatusList({
       credentialDefinition,
       revocationRegistryDefinitionId: 'mock:uri',
       revocationRegistryDefinition,
@@ -653,16 +666,16 @@ describe('bindings', () => {
       timestamp: timeCreateRevStatusList,
     })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequestMetadata, credentialRequest } = anoncreds.createCredentialRequest({
+    const { credentialRequestMetadata, credentialRequest } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -670,7 +683,7 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credential = anoncreds.createW3cCredential({
+    const credential = NativeAnoncreds.instance.createW3cCredential({
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
@@ -686,7 +699,7 @@ describe('bindings', () => {
       encoding: undefined,
     })
 
-    const credentialReceived = anoncreds.processW3cCredential({
+    const credentialReceived = NativeAnoncreds.instance.processW3cCredential({
       credential,
       credentialDefinition,
       credentialRequestMetadata,
@@ -694,25 +707,25 @@ describe('bindings', () => {
       revocationRegistryDefinition,
     })
 
-    const credentialProofDetails = anoncreds.w3cCredentialGetIntegrityProofDetails({
+    const credentialProofDetails = NativeAnoncreds.instance.w3cCredentialGetIntegrityProofDetails({
       objectHandle: credentialReceived,
     })
 
-    const revRegIndex = anoncreds.w3cCredentialProofGetAttribute({
+    const revRegIndex = NativeAnoncreds.instance.w3cCredentialProofGetAttribute({
       objectHandle: credentialProofDetails,
       name: 'rev_reg_index',
     })
 
     const revocationRegistryIndex = revRegIndex === null ? 0 : Number.parseInt(revRegIndex)
 
-    const revocationState = anoncreds.createOrUpdateRevocationState({
+    const revocationState = NativeAnoncreds.instance.createOrUpdateRevocationState({
       revocationRegistryDefinition,
       revocationStatusList,
       revocationRegistryIndex,
       tailsPath,
     })
 
-    const presentation = anoncreds.createW3cPresentation({
+    const presentation = NativeAnoncreds.instance.createW3cPresentation({
       presentationRequest,
       credentials: [
         {
@@ -746,9 +759,9 @@ describe('bindings', () => {
       schemas: { 'mock:uri': schemaObj },
     })
 
-    ok(typeof presentation.handle === 'number')
+    expect(typeof presentation.handle).toBe('number')
 
-    const verify = anoncreds.verifyW3cPresentation({
+    const verify = NativeAnoncreds.instance.verifyW3cPresentation({
       presentation,
       presentationRequest,
       schemas: [schemaObj],
@@ -760,11 +773,11 @@ describe('bindings', () => {
       revocationStatusLists: [revocationStatusList],
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 
   test('create and verify presentation (no revocation use case)', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -772,7 +785,7 @@ describe('bindings', () => {
     })
 
     const { credentialDefinition, keyCorrectnessProof, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -781,16 +794,16 @@ describe('bindings', () => {
         tag: 'TAG',
       })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequestMetadata, credentialRequest } = anoncreds.createCredentialRequest({
+    const { credentialRequestMetadata, credentialRequest } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -798,7 +811,7 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credential = anoncreds.createCredential({
+    const credential = NativeAnoncreds.instance.createCredential({
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
@@ -806,29 +819,30 @@ describe('bindings', () => {
       attributeRawValues: { name: 'Alex', height: '175', age: '28', sex: 'male' },
     })
 
-    const credReceived = anoncreds.processCredential({
+    const credReceived = NativeAnoncreds.instance.processCredential({
       credential,
       credentialDefinition,
       credentialRequestMetadata,
       linkSecret,
     })
 
-    const credJson = anoncreds.getJson({ objectHandle: credential })
+    const credJson = NativeAnoncreds.instance.getJson({ objectHandle: credential })
+    const credParsed = JSON.parse(credJson)
 
-    strictEqual(JSON.parse(credJson).cred_def_id, 'mock:uri')
-    strictEqual(JSON.parse(credJson).schema_id, 'mock:uri')
+    expect(credParsed.cred_def_id).toBe('mock:uri')
+    expect(credParsed.schema_id).toBe('mock:uri')
 
-    const credReceivedJson = anoncreds.getJson({ objectHandle: credReceived })
+    const credReceivedJson = NativeAnoncreds.instance.getJson({ objectHandle: credReceived })
+    const credReceivedParsed = JSON.parse(credReceivedJson)
 
-    strictEqual(JSON.parse(credReceivedJson).cred_def_id, 'mock:uri')
-    strictEqual(JSON.parse(credReceivedJson).schema_id, 'mock:uri')
+    expect(credReceivedParsed.cred_def_id).toBe('mock:uri')
+    expect(credReceivedParsed.schema_id).toBe('mock:uri')
+    expect(credReceivedParsed.signature).toBeDefined()
+    expect(credReceivedParsed.witness).toBeNull()
 
-    ok(JSON.parse(credReceivedJson).signature)
-    strictEqual(JSON.parse(credReceivedJson).witness, null)
+    const nonce = NativeAnoncreds.instance.generateNonce()
 
-    const nonce = anoncreds.generateNonce()
-
-    const presentationRequest = anoncreds.presentationRequestFromJson({
+    const presentationRequest = NativeAnoncreds.instance.presentationRequestFromJson({
       json: JSON.stringify({
         nonce,
         name: 'pres_req_1',
@@ -854,7 +868,7 @@ describe('bindings', () => {
       }),
     })
 
-    const presentation = anoncreds.createPresentation({
+    const presentation = NativeAnoncreds.instance.createPresentation({
       presentationRequest,
       credentials: [
         {
@@ -893,9 +907,9 @@ describe('bindings', () => {
       selfAttest: { attr3_referent: '8-800-300' },
     })
 
-    ok(typeof presentation.handle === 'number')
+    expect(typeof presentation.handle).toBe('number')
 
-    const verify = anoncreds.verifyPresentation({
+    const verify = NativeAnoncreds.instance.verifyPresentation({
       presentation,
       presentationRequest,
       schemas: [schemaObj],
@@ -904,11 +918,11 @@ describe('bindings', () => {
       credentialDefinitionIds: ['mock:uri'],
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 
   test('create and verify w3c presentation (no revocation use case)', () => {
-    const schemaObj = anoncreds.createSchema({
+    const schemaObj = NativeAnoncreds.instance.createSchema({
       name: 'schema-1',
       issuerId: 'mock:uri',
       version: '1',
@@ -916,7 +930,7 @@ describe('bindings', () => {
     })
 
     const { credentialDefinition, keyCorrectnessProof, credentialDefinitionPrivate } =
-      anoncreds.createCredentialDefinition({
+      NativeAnoncreds.instance.createCredentialDefinition({
         schemaId: 'mock:uri',
         issuerId: 'mock:uri',
         schema: schemaObj,
@@ -925,16 +939,16 @@ describe('bindings', () => {
         tag: 'TAG',
       })
 
-    const credentialOffer = anoncreds.createCredentialOffer({
+    const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
       credentialDefinitionId: 'mock:uri',
       keyCorrectnessProof,
     })
 
-    const linkSecret = anoncreds.createLinkSecret()
+    const linkSecret = NativeAnoncreds.instance.createLinkSecret()
     const linkSecretId = 'link secret id'
 
-    const { credentialRequestMetadata, credentialRequest } = anoncreds.createCredentialRequest({
+    const { credentialRequestMetadata, credentialRequest } = NativeAnoncreds.instance.createCredentialRequest({
       entropy: ENTROPY,
       credentialDefinition,
       linkSecret,
@@ -942,7 +956,7 @@ describe('bindings', () => {
       credentialOffer,
     })
 
-    const credential = anoncreds.createW3cCredential({
+    const credential = NativeAnoncreds.instance.createW3cCredential({
       credentialDefinition,
       credentialDefinitionPrivate,
       credentialOffer,
@@ -950,16 +964,16 @@ describe('bindings', () => {
       attributeRawValues: { name: 'Alex', height: '175', age: '28', sex: 'male' },
     })
 
-    const credReceived = anoncreds.processW3cCredential({
+    const credReceived = NativeAnoncreds.instance.processW3cCredential({
       credential,
       credentialDefinition,
       credentialRequestMetadata,
       linkSecret,
     })
 
-    const nonce = anoncreds.generateNonce()
+    const nonce = NativeAnoncreds.instance.generateNonce()
 
-    const presentationRequest = anoncreds.presentationRequestFromJson({
+    const presentationRequest = NativeAnoncreds.instance.presentationRequestFromJson({
       json: JSON.stringify({
         nonce,
         name: 'pres_req_1',
@@ -979,7 +993,7 @@ describe('bindings', () => {
       }),
     })
 
-    const presentation = anoncreds.createW3cPresentation({
+    const presentation = NativeAnoncreds.instance.createW3cPresentation({
       presentationRequest,
       credentials: [
         {
@@ -1011,9 +1025,9 @@ describe('bindings', () => {
       schemas: { 'mock:uri': schemaObj },
     })
 
-    ok(typeof presentation.handle === 'number')
+    expect(typeof presentation.handle).toBe('number')
 
-    const verify = anoncreds.verifyW3cPresentation({
+    const verify = NativeAnoncreds.instance.verifyW3cPresentation({
       presentation,
       presentationRequest,
       schemas: [schemaObj],
@@ -1022,6 +1036,6 @@ describe('bindings', () => {
       credentialDefinitionIds: ['mock:uri'],
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 })

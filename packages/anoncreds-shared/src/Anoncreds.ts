@@ -2,6 +2,7 @@
 // This will make sure that when wrapping both methods to shared functionality
 
 import type { ObjectHandle } from './ObjectHandle'
+import type { AnoncredsErrorObject } from './error'
 
 export type NativeCredentialEntry = {
   credential: ObjectHandle
@@ -38,7 +39,7 @@ export type NativeCredentialRevocationConfig = {
 export type Anoncreds = {
   version(): string
 
-  getCurrentError(): string
+  getCurrentError(): AnoncredsErrorObject
   setDefaultLogger(): void
 
   generateNonce(): string
