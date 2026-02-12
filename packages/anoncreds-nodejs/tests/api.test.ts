@@ -6,6 +6,7 @@ import {
   CredentialRevocationConfig,
   CredentialRevocationState,
   LinkSecret,
+  Nonce,
   Presentation,
   PresentationRequest,
   RevocationRegistryDefinition,
@@ -13,19 +14,12 @@ import {
   Schema,
   W3cCredential,
   W3cPresentation,
-  anoncreds,
 } from '@hyperledger/anoncreds-shared'
-
-import { setup } from './utils'
-
-import { deepStrictEqual, ok, strictEqual, throws } from 'node:assert'
-import { before, describe, test } from 'node:test'
+import { describe, expect, test } from 'vitest'
 
 describe('API', () => {
-  before(setup)
-
   test('create and verify presentation', () => {
-    const nonce = anoncreds.generateNonce()
+    const nonce = Nonce.generate()
 
     const presentationRequest = PresentationRequest.fromJson({
       nonce,
@@ -178,10 +172,10 @@ describe('API', () => {
       selfAttest: { attr3_referent: '8-800-300' },
     })
 
-    ok(typeof presentation.handle.handle === 'number')
+    expect(typeof presentation.handle.handle).toBe('number')
 
     // Without revocation timestamp override, it shall fail
-    throws(() =>
+    expect(() =>
       presentation.verify({
         presentationRequest,
         schemas: { 'mock:uri': schema },
@@ -189,7 +183,7 @@ describe('API', () => {
         revocationRegistryDefinitions: { 'mock:uri': revocationRegistryDefinition },
         revocationStatusLists: [revocationStatusList],
       })
-    )
+    ).toThrow()
 
     const verify = presentation.verify({
       presentationRequest,
@@ -206,7 +200,7 @@ describe('API', () => {
       ],
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 
   test('create and verify presentation (no revocation use case)', () => {
@@ -259,17 +253,17 @@ describe('API', () => {
 
     const credJson = credential.toJson()
 
-    strictEqual(credJson.cred_def_id, 'mock:uri')
-    strictEqual(credJson.schema_id, 'mock:uri')
+    expect(credJson.cred_def_id).toBe('mock:uri')
+    expect(credJson.schema_id).toBe('mock:uri')
 
     const credReceivedJson = credential.toJson()
-    strictEqual(credReceivedJson.cred_def_id, 'mock:uri')
-    strictEqual(credReceivedJson.schema_id, 'mock:uri')
+    expect(credReceivedJson.cred_def_id).toBe('mock:uri')
+    expect(credReceivedJson.schema_id).toBe('mock:uri')
 
-    ok(credReceivedJson.signature)
-    strictEqual(credReceivedJson.witness, null)
+    expect(credReceivedJson.signature).toBeDefined()
+    expect(credReceivedJson.witness).toBeNull()
 
-    const nonce = anoncreds.generateNonce()
+    const nonce = Nonce.generate()
 
     const presentationRequest = PresentationRequest.fromJson({
       nonce,
@@ -334,7 +328,7 @@ describe('API', () => {
       selfAttest: { attr3_referent: '8-800-300' },
     })
 
-    ok(typeof presentation.handle.handle === 'number')
+    expect(typeof presentation.handle.handle).toBe('number')
 
     const verify = presentation.verify({
       presentationRequest,
@@ -342,14 +336,12 @@ describe('API', () => {
       credentialDefinitions: { 'mock:uri': credentialDefinition },
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 })
 
 test('create and verify presentation passing only JSON objects as parameters', () => {
-  setup()
-
-  const nonce = anoncreds.generateNonce()
+  const nonce = Nonce.generate()
 
   // a schema can be created from JSON
   const schema = Schema.fromJson({
@@ -359,7 +351,7 @@ test('create and verify presentation passing only JSON objects as parameters', (
     attrNames: ['name', 'age', 'sex', 'height'],
   })
 
-  deepStrictEqual(schema.toJson(), {
+  expect(schema.toJson()).toStrictEqual({
     name: 'schema-1',
     issuerId: 'mock:uri',
     version: '1',
@@ -447,18 +439,18 @@ test('create and verify presentation passing only JSON objects as parameters', (
 
   const credJson = credential.toJson()
 
-  strictEqual(credJson.cred_def_id, 'mock:uri')
-  strictEqual(credJson.schema_id, 'mock:uri')
-  strictEqual(credJson.rev_reg_id, 'mock:uri')
+  expect(credJson.cred_def_id).toBe('mock:uri')
+  expect(credJson.schema_id).toBe('mock:uri')
+  expect(credJson.rev_reg_id).toBe('mock:uri')
 
   const credReceivedJson = credential.toJson()
 
-  strictEqual(credReceivedJson.cred_def_id, 'mock:uri')
-  strictEqual(credReceivedJson.schema_id, 'mock:uri')
-  strictEqual(credReceivedJson.rev_reg_id, 'mock:uri')
+  expect(credReceivedJson.cred_def_id).toBe('mock:uri')
+  expect(credReceivedJson.schema_id).toBe('mock:uri')
+  expect(credReceivedJson.rev_reg_id).toBe('mock:uri')
 
-  ok(credReceivedJson.signature)
-  ok(credReceivedJson.witness)
+  expect(credReceivedJson.signature).toBeDefined()
+  expect(credReceivedJson.witness).toBeDefined()
 
   const presentationRequest = {
     nonce,
@@ -523,7 +515,7 @@ test('create and verify presentation passing only JSON objects as parameters', (
     selfAttest: { attr3_referent: '8-800-300' },
   })
 
-  ok(typeof presentation.handle.handle === 'number')
+  expect(typeof presentation.handle.handle).toBe('number')
 
   const verify = Presentation.fromJson(presentation.toJson()).verify({
     presentationRequest,
@@ -533,14 +525,12 @@ test('create and verify presentation passing only JSON objects as parameters', (
     revocationStatusLists: [revocationStatusList.toJson()],
   })
 
-  ok(verify)
+  expect(verify).toBeTruthy()
 })
 
 describe('API W3C', () => {
-  before(setup)
-
   test('create and verify w3c presentation', () => {
-    const nonce = anoncreds.generateNonce()
+    const nonce = Nonce.generate()
 
     const presentationRequest = PresentationRequest.fromJson({
       nonce,
@@ -631,20 +621,20 @@ describe('API W3C', () => {
     })
 
     const legacyCredential = credential.toLegacy()
-    strictEqual(legacyCredential.schemaId, 'mock:uri')
-    strictEqual(legacyCredential.credentialDefinitionId, 'mock:uri')
+    expect(legacyCredential.schemaId).toBe('mock:uri')
+    expect(legacyCredential.credentialDefinitionId).toBe('mock:uri')
 
     const legacyCredentialFrom = Credential.fromW3c({ credential })
-    strictEqual(legacyCredentialFrom.schemaId, 'mock:uri')
-    strictEqual(legacyCredentialFrom.credentialDefinitionId, 'mock:uri')
+    expect(legacyCredentialFrom.schemaId).toBe('mock:uri')
+    expect(legacyCredentialFrom.credentialDefinitionId).toBe('mock:uri')
 
     const w3cCredential = W3cCredential.fromLegacy({ credential: legacyCredential, issuerId: 'mock:uri' })
-    strictEqual(w3cCredential.schemaId, 'mock:uri')
-    strictEqual(w3cCredential.credentialDefinitionId, 'mock:uri')
+    expect(w3cCredential.schemaId).toBe('mock:uri')
+    expect(w3cCredential.credentialDefinitionId).toBe('mock:uri')
 
     const convertedW3cCredential = legacyCredential.toW3c({ issuerId: 'mock:uri' })
-    strictEqual(convertedW3cCredential.schemaId, 'mock:uri')
-    strictEqual(convertedW3cCredential.credentialDefinitionId, 'mock:uri')
+    expect(convertedW3cCredential.schemaId).toBe('mock:uri')
+    expect(convertedW3cCredential.credentialDefinitionId).toBe('mock:uri')
 
     const credentialReceived = credential.process({
       credentialDefinition,
@@ -696,10 +686,10 @@ describe('API W3C', () => {
       schemas: { 'mock:uri': schema },
     })
 
-    ok(typeof presentation.handle.handle === 'number')
+    expect(typeof presentation.handle.handle).toBe('number')
 
     // Without revocation timestamp override, it shall fail
-    throws(() => {
+    expect(() => {
       presentation.verify({
         presentationRequest,
         schemas: { 'mock:uri': schema },
@@ -707,7 +697,7 @@ describe('API W3C', () => {
         revocationRegistryDefinitions: { 'mock:uri': revocationRegistryDefinition },
         revocationStatusLists: [revocationStatusList],
       })
-    })
+    }).toThrow()
 
     const verify = presentation.verify({
       presentationRequest,
@@ -724,7 +714,7 @@ describe('API W3C', () => {
       ],
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 
   test('create and verify w3c presentation (no revocation use case)', () => {
@@ -775,7 +765,7 @@ describe('API W3C', () => {
       linkSecret,
     })
 
-    const nonce = anoncreds.generateNonce()
+    const nonce = Nonce.generate()
 
     const presentationRequest = PresentationRequest.fromJson({
       nonce,
@@ -827,7 +817,7 @@ describe('API W3C', () => {
       schemas: { 'mock:uri': schema },
     })
 
-    ok(typeof presentation.handle.handle === 'number')
+    expect(typeof presentation.handle.handle).toBe('number')
 
     const verify = presentation.verify({
       presentationRequest,
@@ -835,6 +825,6 @@ describe('API W3C', () => {
       credentialDefinitions: { 'mock:uri': credentialDefinition },
     })
 
-    ok(verify)
+    expect(verify).toBeTruthy()
   })
 })

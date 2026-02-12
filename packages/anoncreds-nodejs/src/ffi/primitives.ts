@@ -1,21 +1,13 @@
-import { refType, types } from '@2060.io/ref-napi'
+import * as koffi from 'koffi'
 
-// Primitives
+export const FFI_UINT8 = koffi.types.uint8_t
+export const FFI_UINT64 = koffi.types.uint64_t
+export const FFI_USIZE = koffi.types.size_t
+export const FFI_INT8 = koffi.types.int8_t
+export const FFI_INT32 = koffi.types.int32_t
+export const FFI_INT64 = koffi.types.int64_t
+export const FFI_STRING = koffi.types.string
+export const FFI_VOID = koffi.types.void
+export const FFI_OBJECT_HANDLE = FFI_USIZE
 
-export const FFI_ISIZE = 'size_t'
-export const FFI_INT8 = 'int8'
-export const FFI_INT32 = 'int32'
-export const FFI_INT64 = 'int64'
-export const FFI_UINT = 'uint'
-export const FFI_UINT8 = 'uint8'
-export const FFI_ERRORCODE = FFI_UINT
-export const FFI_OBJECT_HANDLE = FFI_ISIZE
-export const FFI_VOID = types.void
-export const FFI_STRING = 'string'
-
-// Pointers
-
-export const FFI_ISIZE_PTR = refType(FFI_ISIZE)
-export const FFI_INT8_PTR = refType(FFI_INT8)
-export const FFI_OBJECT_HANDLE_PTR = refType(FFI_OBJECT_HANDLE)
-export const FFI_STRING_PTR = refType(FFI_STRING)
+export const FFI_ERROR_CODE = FFI_INT64

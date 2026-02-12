@@ -1,17 +1,35 @@
-import { alloc } from '@2060.io/ref-napi'
+export const allocatePointer = () => {
+  return [undefined] as [unknown]
+}
 
-import { FFI_INT8, FFI_OBJECT_HANDLE, FFI_STRING } from '../ffi/primitives'
+export const allocateStringBuffer = () => {
+  return [undefined] as [unknown]
+}
 
-import { ByteBufferStruct, CredRevInfoStruct } from './structures'
+export const allocateInt32Buffer = () => {
+  return [0] as [number]
+}
 
-// TODO: more allocations here
+export const allocateInt8Buffer = () => {
+  return [0] as [number]
+}
 
-export const allocateStringBuffer = (): Buffer => alloc(FFI_STRING)
+export const allocateByteBuffer = () => {
+  return {} as unknown
+}
 
-export const allocatePointer = (): Buffer => alloc(FFI_OBJECT_HANDLE)
+export const allocateSecretBuffer = () => {
+  return {} as unknown
+}
 
-export const allocateInt8Buffer = (): Buffer => alloc(FFI_INT8)
+export const allocateEncryptedBuffer = () => {
+  return {} as unknown
+}
 
-export const allocateCredRevInfoStructPointer = (): Buffer => alloc(CredRevInfoStruct)
+export const allocateAeadParams = () => {
+  return {} as unknown
+}
 
-export const allocateByteBuffer = (): Buffer => alloc(ByteBufferStruct)
+export const allocateLocalKeyHandle = allocatePointer
+
+export const allocateStringListHandle = allocatePointer

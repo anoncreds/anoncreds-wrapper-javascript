@@ -24,17 +24,13 @@
     "install": "node scripts/install.js"
   },
   "dependencies": {
-    "@2060.io/ffi-napi": "^4.0.9",
-    "@2060.io/ref-napi": "^3.0.6",
     "@hyperledger/anoncreds-shared": "workspace:*",
-    "ref-array-di": "1.2.2",
-    "ref-struct-di": "1.1.1"
+    "koffi": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/ref-array-di": "^1.2.3",
-    "@types/ref-struct-di": "^1.1.6",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "binary": {
     "version": "v0.2.3",
@@ -42,6 +38,6 @@
     "packageName": "library-{platform}-{arch}.tar.gz"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   }
 }

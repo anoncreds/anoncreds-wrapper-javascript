@@ -6,11 +6,9 @@ import type {
   NativeCredentialRevocationConfig,
   NativeNonRevokedIntervalOverride,
 } from '@hyperledger/anoncreds-shared'
+import { AnoncredsError, ObjectHandle } from '@hyperledger/anoncreds-shared'
 import type { NativeBindings } from './NativeBindings'
 import type { ReturnObject } from './serialize'
-
-import { AnoncredsError, ObjectHandle } from '@hyperledger/anoncreds-shared'
-
 import { serializeArguments } from './serialize'
 
 export class ReactNativeAnoncreds implements Anoncreds {
@@ -22,7 +20,7 @@ export class ReactNativeAnoncreds implements Anoncreds {
 
   private handleError<T>({ errorCode, value }: ReturnObject<T>): T {
     if (errorCode !== 0) {
-      throw new AnoncredsError(JSON.parse(this.getCurrentError()) as AnoncredsErrorObject)
+      throw new AnoncredsError(this.getCurrentError())
     }
 
     return value as T
@@ -72,8 +70,9 @@ export class ReactNativeAnoncreds implements Anoncreds {
     this.anoncreds.setDefaultLogger({})
   }
 
-  public getCurrentError(): string {
-    return this.anoncreds.getCurrentError({})
+  public getCurrentError(): AnoncredsErrorObject {
+    const error = this.anoncreds.getCurrentError({})
+    return JSON.parse(error) as AnoncredsErrorObject
   }
 
   public generateNonce(): string {

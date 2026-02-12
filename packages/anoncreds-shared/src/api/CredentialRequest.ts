@@ -1,9 +1,7 @@
-import type { ObjectHandle } from '../ObjectHandle'
-import type { JsonObject } from '../types'
-
 import { AnoncredsObject } from '../AnoncredsObject'
+import type { ObjectHandle } from '../ObjectHandle'
 import { NativeAnoncreds } from '../register'
-
+import type { JsonObject } from '../types'
 import { CredentialDefinition } from './CredentialDefinition'
 import { CredentialOffer } from './CredentialOffer'
 import { CredentialRequestMetadata } from './CredentialRequestMetadata'

@@ -1,113 +1,83 @@
-import * as ref from '@2060.io/ref-napi'
-import RefArray from 'ref-array-di'
-import RefStruct from 'ref-struct-di'
+import koffi from 'koffi'
+import { FFI_INT8, FFI_INT32, FFI_INT64, FFI_OBJECT_HANDLE, FFI_STRING, FFI_UINT8, FFI_USIZE } from './primitives'
 
-import { FFI_INT8, FFI_INT32, FFI_INT64, FFI_ISIZE, FFI_OBJECT_HANDLE, FFI_STRING } from './primitives'
-
-const CStruct = RefStruct(ref)
-const CArray = RefArray(ref)
-
-export const StringArray = CArray('string')
-
-const FFI_INT32_ARRAY = CArray('int32')
-
-const FFI_INT64_ARRAY = CArray('int64')
-
-export const ByteBufferArray = CArray('uint8')
-export const ByteBufferArrayPtr = ref.refType(FFI_STRING)
-
-export const Int64List = FFI_INT64_ARRAY
-export const Int32List = FFI_INT32_ARRAY
-
-export const StringArrayPtr = ref.refType(StringArray)
-
-export const ByteBufferStruct = CStruct({
+export const ByteBufferStruct = koffi.struct('ByteBufferStruct', {
   len: FFI_INT64,
-  data: ByteBufferArrayPtr,
+  data: koffi.pointer(FFI_UINT8),
 })
 
-export const ByteBufferStructPtr = ref.refType(ByteBufferStruct)
+export type ByteBufferStructType = {
+  len: number
+  data: Uint8Array
+}
 
-export const StringListStruct = CStruct({
-  count: ref.types.size_t,
-  data: StringArray,
+export const StringListStruct = koffi.struct('StringListStruct', {
+  count: FFI_USIZE,
+  data: koffi.pointer(FFI_STRING),
 })
 
-export const StringListStructPtr = ref.refType(StringListStruct)
+export type StringListStructType = {
+  count: number
+  data: string[]
+}
 
-export const I64ListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: FFI_INT64_ARRAY,
+export const I32ListStruct = koffi.struct('I32ListStruct', {
+  count: FFI_USIZE,
+  data: koffi.pointer(FFI_INT32),
 })
 
-export const I32ListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: FFI_INT32_ARRAY,
-})
+export type I32ListStructType = {
+  count: number
+  data: number[]
+}
 
-export const CredRevInfoStruct = CStruct({
+export const CredRevInfoStruct = koffi.struct('CredRevInfoStruct', {
   reg_def: FFI_OBJECT_HANDLE,
   reg_def_private: FFI_OBJECT_HANDLE,
   status_list: FFI_OBJECT_HANDLE,
   reg_idx: FFI_INT64,
 })
 
-export const CredentialEntryStruct = CStruct({
-  credential: FFI_ISIZE,
-  timestamp: FFI_INT64,
-  rev_state: FFI_ISIZE,
+export const CredentialEntryStruct = koffi.struct('CredentialEntryStruct', {
+  credential: FFI_OBJECT_HANDLE,
+  timestamp: FFI_INT32,
+  rev_state: FFI_OBJECT_HANDLE,
 })
 
-export const CredentialEntryArray = CArray(CredentialEntryStruct)
-
-export const CredentialEntryListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: CredentialEntryArray,
+export const CredentialEntryStructList = koffi.struct('CredentialEntryStructList', {
+  count: FFI_USIZE,
+  data: koffi.pointer(CredentialEntryStruct),
 })
 
-export const CredentialProveStruct = CStruct({
+export const CredentialProveStruct = koffi.struct('CredentialProveStruct', {
   entry_idx: FFI_INT64,
   referent: FFI_STRING,
   is_predicate: FFI_INT8,
   reveal: FFI_INT8,
 })
 
-export const CredentialProveArray = CArray(CredentialProveStruct)
-
-export const CredentialProveListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: CredentialProveArray,
+export const CredentialProveStructList = koffi.struct('CredentialProveStructList', {
+  count: FFI_USIZE,
+  data: koffi.pointer(CredentialProveStruct),
 })
 
-export const ObjectHandleArray = CArray('size_t')
-
-export const ObjectHandleListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: ObjectHandleArray,
+export const ObjectHandleStructList = koffi.struct('ObjectHandleStructList', {
+  count: FFI_USIZE,
+  data: koffi.pointer(FFI_OBJECT_HANDLE),
 })
 
-export const RevocationEntryStruct = CStruct({
-  def_entry_idx: FFI_INT64,
-  entry: FFI_ISIZE,
-  timestamp: FFI_INT64,
-})
+export type ObjectHandleStructListType = {
+  count: number
+  data: number[]
+}
 
-export const RevocationEntryArray = CArray(RevocationEntryStruct)
-
-export const RevocationEntryListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: RevocationEntryArray,
-})
-
-export const NonRevokedIntervalOverrideStruct = CStruct({
+export const NonrevokedIntervalOverrideStruct = koffi.struct('NonrevokedIntervalOverrideStruct', {
   rev_reg_def_id: FFI_STRING,
   requested_from_ts: FFI_INT32,
   override_rev_status_list_ts: FFI_INT32,
 })
 
-export const NonRevokedIntervalOverrideArray = CArray(NonRevokedIntervalOverrideStruct)
-
-export const NonRevokedIntervalOverrideListStruct = CStruct({
-  count: FFI_ISIZE,
-  data: NonRevokedIntervalOverrideArray,
+export const NonrevokedIntervalOverrideStructList = koffi.struct('NonrevokedIntervalOverrideStructList', {
+  count: FFI_USIZE,
+  data: koffi.pointer(NonrevokedIntervalOverrideStruct),
 })

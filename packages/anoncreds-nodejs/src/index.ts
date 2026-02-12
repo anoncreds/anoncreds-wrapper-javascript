@@ -1,5 +1,4 @@
 import { NativeAnoncreds } from '@hyperledger/anoncreds-shared'
-
 import { NodeJSAnoncreds } from './NodeJSAnoncreds'
 
 export const anoncredsNodeJS = new NodeJSAnoncreds()
