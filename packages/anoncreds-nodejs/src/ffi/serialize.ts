@@ -1,67 +1,11 @@
 import { ObjectHandle } from '@hyperledger/anoncreds-shared'
-
 import {
   i32ListToI32ListStruct,
   objectHandleListToObjectHandleListStruct,
   stringListToStringListStruct,
 } from './conversion'
-import { ByteBufferStruct, I32ListStruct, StringListStruct } from './structures'
 
-type Argument = Record<string, unknown> | unknown[] | Date | Uint8Array | SerializedArgument | boolean | ObjectHandle
-
-type SerializedArgument = string | number | Uint8Array | Record<string, unknown> | null
-
-type SerializedArguments = Record<string, SerializedArgument>
-
-export type SerializedOptions<Type> = Required<{
-  [Property in keyof Type]: Type[Property] extends string
-    ? string
-    : Type[Property] extends number
-      ? number
-      : Type[Property] extends boolean
-        ? number
-        : Type[Property] extends boolean | undefined
-          ? number
-          : Type[Property] extends Record<string, unknown>
-            ? string
-            : Type[Property] extends string[]
-              ? string[]
-              : Type[Property] extends string[] | undefined
-                ? string[]
-                : Type[Property] extends number[]
-                  ? number[]
-                  : Type[Property] extends number[] | undefined
-                    ? number[]
-                    : Type[Property] extends Date
-                      ? number
-                      : Type[Property] extends Date | undefined
-                        ? number
-                        : Type[Property] extends string | undefined
-                          ? string
-                          : Type[Property] extends number | undefined
-                            ? number
-                            : Type[Property] extends Uint8Array
-                              ? Uint8Array
-                              : Type[Property] extends ObjectHandle
-                                ? number
-                                : Type[Property] extends ObjectHandle[]
-                                  ? number[]
-                                  : Type[Property] extends ObjectHandle[] | undefined
-                                    ? number[]
-                                    : Type[Property] extends ObjectHandle | undefined
-                                      ? number
-                                      : Type[Property] extends Uint8Array
-                                        ? typeof ByteBufferStruct
-                                        : Type[Property] extends Uint8Array | undefined
-                                          ? typeof ByteBufferStruct
-                                          : Type[Property] extends unknown[] | undefined
-                                            ? string
-                                            : Type[Property] extends Record<string, unknown> | undefined
-                                              ? string
-                                              : unknown
-}>
-
-const serialize = (arg: Argument): SerializedArgument => {
+const serialize = (arg: unknown): unknown => {
   switch (typeof arg) {
     case 'undefined':
       return null
@@ -94,12 +38,10 @@ const serialize = (arg: Argument): SerializedArgument => {
   }
 }
 
-export const serializeArguments = <T extends Record<string, Argument> = Record<string, Argument>>(
-  args: T
-): SerializedOptions<T> => {
-  const retVal: SerializedArguments = {}
+export const serializeArguments = <T extends Record<string, unknown> = Record<string, unknown>>(args: T) => {
+  const retVal: Record<string, unknown> = {}
   for (const [key, val] of Object.entries(args)) {
     retVal[key] = serialize(val)
   }
-  return retVal as SerializedOptions<T>
+  return retVal
 }

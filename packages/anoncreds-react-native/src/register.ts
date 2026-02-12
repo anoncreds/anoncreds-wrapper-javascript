@@ -1,6 +1,5 @@
-import type { NativeBindings } from './NativeBindings'
-
 import { NativeModules, Platform } from 'react-native'
+import type { NativeBindings } from './NativeBindings'
 
 declare global {
   const _anoncreds: NativeBindings

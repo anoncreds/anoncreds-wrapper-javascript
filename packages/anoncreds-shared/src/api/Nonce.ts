@@ -1,4 +1,4 @@
-import { NativeAnoncreds } from "../register";
+import { NativeAnoncreds } from '../register'
 
 export class Nonce {
   public static generate(): string {

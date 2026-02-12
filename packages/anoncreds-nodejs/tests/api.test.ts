@@ -15,10 +15,7 @@ import {
   W3cCredential,
   W3cPresentation,
 } from '@hyperledger/anoncreds-shared'
-
-import { setup } from './utils'
-
-import { beforeAll, describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 describe('API', () => {
   test('create and verify presentation', () => {
@@ -344,8 +341,6 @@ describe('API', () => {
 })
 
 test('create and verify presentation passing only JSON objects as parameters', () => {
-  setup()
-
   const nonce = Nonce.generate()
 
   // a schema can be created from JSON
@@ -534,8 +529,6 @@ test('create and verify presentation passing only JSON objects as parameters', (
 })
 
 describe('API W3C', () => {
-  beforeAll(setup)
-
   test('create and verify w3c presentation', () => {
     const nonce = Nonce.generate()
 

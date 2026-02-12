@@ -16,10 +16,20 @@ export const StringListStruct = koffi.struct('StringListStruct', {
   data: koffi.pointer(FFI_STRING),
 })
 
+export type StringListStructType = {
+  count: number
+  data: string[]
+}
+
 export const I32ListStruct = koffi.struct('I32ListStruct', {
   count: FFI_USIZE,
   data: koffi.pointer(FFI_INT32),
 })
+
+export type I32ListStructType = {
+  count: number
+  data: number[]
+}
 
 export const CredRevInfoStruct = koffi.struct('CredRevInfoStruct', {
   reg_def: FFI_OBJECT_HANDLE,
@@ -51,10 +61,15 @@ export const CredentialProveStructList = koffi.struct('CredentialProveStructList
   data: koffi.pointer(CredentialProveStruct),
 })
 
-export const ObjectHandleList = koffi.struct('ObjectHandleList', {
+export const ObjectHandleStructList = koffi.struct('ObjectHandleStructList', {
   count: FFI_USIZE,
   data: koffi.pointer(FFI_OBJECT_HANDLE),
 })
+
+export type ObjectHandleStructListType = {
+  count: number
+  data: number[]
+}
 
 export const NonrevokedIntervalOverrideStruct = koffi.struct('NonrevokedIntervalOverrideStruct', {
   rev_reg_def_id: FFI_STRING,

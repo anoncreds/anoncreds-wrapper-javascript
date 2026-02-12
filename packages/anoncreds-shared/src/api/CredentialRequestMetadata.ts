@@ -1,7 +1,6 @@
-import type { JsonObject } from '../types'
-
 import { AnoncredsObject } from '../AnoncredsObject'
 import { NativeAnoncreds } from '../register'
+import type { JsonObject } from '../types'
 
 export class CredentialRequestMetadata extends AnoncredsObject {
   public static fromJson(json: JsonObject) {

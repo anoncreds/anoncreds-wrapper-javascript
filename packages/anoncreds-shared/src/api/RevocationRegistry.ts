@@ -1,8 +1,7 @@
-import type { JsonObject } from '../types'
-import type { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
-
 import { AnoncredsObject } from '../AnoncredsObject'
 import { NativeAnoncreds } from '../register'
+import type { JsonObject } from '../types'
+import type { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
 
 export type UpdateRevocationRegistryOptions = {
   revocationRegistryDefinition: RevocationRegistryDefinition
