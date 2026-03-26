@@ -150,7 +150,10 @@ export class W3cCredential extends AnoncredsObject {
 
   public get revocationRegistryId() {
     const proofDetails = this.getProofDetails()
-    return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'rev_reg_id' }) ?? undefined
+    return (
+      NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'rev_reg_id' }) ??
+      undefined
+    )
   }
 
   public get revocationRegistryIndex() {
