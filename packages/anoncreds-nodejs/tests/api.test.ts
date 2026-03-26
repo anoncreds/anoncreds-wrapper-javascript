@@ -263,6 +263,10 @@ describe('API', () => {
     expect(credReceivedJson.signature).toBeDefined()
     expect(credReceivedJson.witness).toBeNull()
 
+    // Revocation-related getters must return undefined for non-revocable credentials
+    expect(credReceived.revocationRegistryId).toBeUndefined()
+    expect(credReceived.revocationRegistryIndex).toBeUndefined()
+
     const nonce = Nonce.generate()
 
     const presentationRequest = PresentationRequest.fromJson({
@@ -764,6 +768,10 @@ describe('API W3C', () => {
       credentialRequestMetadata,
       linkSecret,
     })
+
+    // Revocation-related getters must return undefined for non-revocable credentials
+    expect(credReceived.revocationRegistryId).toBeUndefined()
+    expect(credReceived.revocationRegistryIndex).toBeUndefined()
 
     const nonce = Nonce.generate()
 

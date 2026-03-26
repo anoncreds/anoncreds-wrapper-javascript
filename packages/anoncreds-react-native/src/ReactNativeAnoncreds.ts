@@ -300,8 +300,8 @@ export class ReactNativeAnoncreds implements Anoncreds {
     return this.handleError(this.anoncreds.revocationRegistryDefinitionGetAttribute(serializeArguments(options)))
   }
 
-  public credentialGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string {
-    return this.handleError(this.anoncreds.credentialGetAttribute(serializeArguments(options)))
+  public credentialGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null {
+    return this.handleError(this.anoncreds.credentialGetAttribute(serializeArguments(options))) ?? null
   }
 
   public getJson(options: { objectHandle: ObjectHandle }): string {
@@ -492,8 +492,8 @@ export class ReactNativeAnoncreds implements Anoncreds {
     return new ObjectHandle(handle)
   }
 
-  public w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string {
-    return this.handleError(this.anoncreds.w3cCredentialProofGetAttribute(serializeArguments(options)))
+  public w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null {
+    return this.handleError(this.anoncreds.w3cCredentialProofGetAttribute(serializeArguments(options))) ?? null
   }
 
   public w3cPresentationFromJson(options: { json: string }): ObjectHandle {
