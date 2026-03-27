@@ -142,7 +142,9 @@ export class Credential extends AnoncredsObject {
   }
 
   public get revocationRegistryId() {
-    return NativeAnoncreds.instance.credentialGetAttribute({ objectHandle: this.handle, name: 'rev_reg_id' })
+    return (
+      NativeAnoncreds.instance.credentialGetAttribute({ objectHandle: this.handle, name: 'rev_reg_id' }) ?? undefined
+    )
   }
 
   public get revocationRegistryIndex() {
