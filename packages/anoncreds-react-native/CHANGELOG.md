@@ -1,5 +1,20 @@
 # @hyperledger/anoncreds-react-native
 
+## 0.4.0
+
+### Minor Changes
+
+- 6694695: - Updated nodejs wrapper to support koffi
+  - Include nodejs 24 support
+  - Drop nodejs 18 support
+  - Added `Nonce` class to generate a nonce
+  - Now relying on vitest
+
+### Patch Changes
+
+- Updated dependencies [6694695]
+  - @hyperledger/anoncreds-shared@0.4.0
+
 ## 0.3.4
 
 ### Patch Changes
