@@ -166,7 +166,7 @@ export type Anoncreds = {
     timestamp?: number
   }): ObjectHandle
 
-  credentialGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string
+  credentialGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null
 
   revocationRegistryDefinitionGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string
 
@@ -257,5 +257,5 @@ export type Anoncreds = {
 
   w3cCredentialGetIntegrityProofDetails(options: { objectHandle: ObjectHandle }): ObjectHandle
 
-  w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string
+  w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null
 }

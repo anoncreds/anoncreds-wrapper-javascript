@@ -109,14 +109,15 @@ export class NodeJSAnoncreds implements Anoncreds {
     return handleReturnPointer<string>(ret)
   }
 
-  public credentialGetAttribute(options: { objectHandle: ObjectHandle; name: string }) {
+  public credentialGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null {
     const { objectHandle, name } = serializeArguments(options)
 
     const ret = allocateStringBuffer()
     const errorCode = this.nativeAnoncreds.anoncreds_credential_get_attribute(objectHandle, name, ret)
     this.handleError(errorCode)
 
-    return handleReturnPointer<string>(ret)
+    const value = Array.isArray(ret) ? ret[0] : ret
+    return (value as string) ?? null
   }
 
   public createCredentialDefinition(options: {
@@ -734,14 +735,15 @@ export class NodeJSAnoncreds implements Anoncreds {
     return new ObjectHandle(handleReturnPointer<number>(ret))
   }
 
-  public w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }) {
+  public w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null {
     const { objectHandle, name } = serializeArguments(options)
 
     const ret = allocateStringBuffer()
     const errorCode = this.nativeAnoncreds.anoncreds_w3c_credential_proof_get_attribute(objectHandle, name, ret)
     this.handleError(errorCode)
 
-    return handleReturnPointer<string>(ret)
+    const value = Array.isArray(ret) ? ret[0] : ret
+    return (value as string) ?? null
   }
 
   public w3cCredentialFromJson(options: { json: string }): ObjectHandle {
