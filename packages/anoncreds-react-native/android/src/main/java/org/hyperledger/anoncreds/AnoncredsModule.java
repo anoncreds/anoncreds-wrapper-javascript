@@ -43,7 +43,7 @@ public class AnoncredsModule extends ReactContextBaseJavaModule {
         System.loadLibrary("anoncredsreactnative");
         ReactContext context = getReactApplicationContext();
         long jsContextPointer = context.getJavaScriptContextHolder().get();
-        CallInvokerHolderImpl holder = (CallInvokerHolderImpl) context.getCatalystInstance().getJSCallInvokerHolder();
+        CallInvokerHolderImpl holder = (CallInvokerHolderImpl) context.getJSCallInvokerHolder();
         installNative(jsContextPointer, holder);
         return true;
       } catch (Exception exception) {
