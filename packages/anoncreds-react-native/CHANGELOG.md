@@ -1,5 +1,12 @@
 # @hyperledger/anoncreds-react-native
 
+## 0.4.1
+
+### Patch Changes
+
+- 41be1ca: fix(react-native): install JSI bindings under NewArch (bridgeless)
+  - @hyperledger/anoncreds-shared@0.4.1
+
 ## 0.4.0
 
 ### Minor Changes
