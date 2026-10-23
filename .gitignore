@@ -14,3 +14,4 @@ packages/anoncreds-react-native/android/.cxx
 examples/anoncreds-react-native-example/android
 examples/anoncreds-react-native-example/ios
 examples/anoncreds-react-native-example/.expo
+examples/anoncreds-react-native-example/.harness

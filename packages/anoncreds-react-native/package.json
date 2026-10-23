@@ -40,8 +40,8 @@
     "@hyperledger/anoncreds-shared": "workspace:*"
   },
   "devDependencies": {
-    "react": "18.2.0",
-    "react-native": ">= 0.77",
+    "react": "catalog:",
+    "react-native": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {

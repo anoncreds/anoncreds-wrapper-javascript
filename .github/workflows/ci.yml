@@ -78,3 +78,57 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  # Runs the tests in packages/anoncreds-shared/tests inside the example app with React Native Harness, on an emulator and
+  # a simulator. The example app is built with each Expo SDK in the matrix, and with it a React Native version: 53 (React
+  # Native 0.79, the oldest SDK with React Native >= 0.77), 55 (0.83) and 58 (0.88, the version in the lockfile).
+  test-react-native:
+    if: github.event_name != 'pull_request_review' ||  github.event.pull_request.head.ref == 'changeset-release/main'
+    runs-on: ${{ matrix.platform == 'ios' && 'macos-latest' || 'ubuntu-24.04' }}
+    name: Tests React Native (${{ matrix.platform }}, Expo SDK ${{ matrix.expo-sdk }})
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+        expo-sdk: [53, 55, 58]
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Setup Java
+        if: matrix.platform == 'android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Use Expo SDK ${{ matrix.expo-sdk }}
+        if: matrix.expo-sdk != 58
+        working-directory: examples/anoncreds-react-native-example
+        run: node harness/use-expo-sdk.mjs ${{ matrix.expo-sdk }}
+
+      - name: Build the example app
+        working-directory: examples/anoncreds-react-native-example
+        run: node harness/run.mjs ${{ matrix.platform }} --build-only
+
+      # Harness boots the emulator or simulator from rn-harness.config.mjs and installs the app
+      - name: Run tests
+        uses: callstackincubator/react-native-harness@v1.6.0
+        with:
+          runner: ${{ matrix.platform }}
+          app: ${{ matrix.platform == 'ios' && 'ios/build/Build/Products/Debug-iphonesimulator/anoncredsreactnativeexample.app' || 'android/app/build/outputs/apk/debug/app-debug.apk' }}
+          projectRoot: examples/anoncreds-react-native-example
+          packageManager: pnpm

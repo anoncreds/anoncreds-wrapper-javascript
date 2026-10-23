@@ -16,6 +16,10 @@
     "build": "pnpm -r build",
     "clean": "pnpm -r clean",
     "test": "vitest",
+    "test:android": "pnpm --filter anoncreds-react-native-example test:android",
+    "test:ios": "pnpm --filter anoncreds-react-native-example test:ios",
+    "test:android:device": "pnpm --filter anoncreds-react-native-example test:android:device",
+    "test:ios:device": "pnpm --filter anoncreds-react-native-example test:ios:device",
     "release": "pnpm build && pnpm changeset publish --no-git-tag",
     "changeset-version": "pnpm changeset version && pnpm style:fix"
   },
@@ -25,7 +29,6 @@
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
     "vitest": "catalog:"
   },
   "packageManager": "pnpm@10.29.2"

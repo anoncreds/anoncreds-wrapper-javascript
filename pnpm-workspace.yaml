@@ -2,18 +2,24 @@ packages:
   - packages/*
   - examples/*
 
+# The React Native package (devDependencies) and the example app use the same react / react-native, so Metro bundles a
+# single copy of each
 catalog:
   '@biomejs/biome': 1.9.4
   '@changesets/cli': ^2.27.12
-  '@types/node': ^20.12.11
+  '@types/node': ^20.19.0
   koffi: ^2.15.1
+  react: 19.3.0
+  react-native: 0.88.0
   rimraf: ^5.0.5
-  typescript: ~5.4.5
-  vite-tsconfig-paths: ^5.1.4
+  typescript: ~6.0.3
   vitest: ^4.0.12
 
 ignoredBuiltDependencies:
   - esbuild
+  # Dependencies of React Native Harness that ship prebuilt binaries
+  - '@parcel/watcher'
+  - unrs-resolver
 
 onlyBuiltDependencies:
   - '@biomejs/biome'
