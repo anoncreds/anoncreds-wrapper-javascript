@@ -105,15 +105,15 @@ const env = { ...process.env }
 if (runner === 'android') {
   env.HARNESS_APP_PATH = buildAndroidEmulatorApp()
 } else if (runner === 'ios') {
+  const simulator = findIosSimulator()
+  if (!simulator) fail('No iPhone simulator found. Install an iOS simulator runtime in Xcode.')
+  // Boot it while the app builds: a first boot can take longer than Harness waits for it, on CI runners especially
+  spawnSync('xcrun', ['simctl', 'boot', simulator.udid], { stdio: 'ignore' }) // Fails when it's already booted
+
   env.HARNESS_APP_PATH = buildIosSimulatorApp()
 
   // Harness only installs the app on a simulator that doesn't have it yet, so install the new build here
-  const simulator = findIosSimulator()
-  if (!simulator) fail('No iPhone simulator found. Install an iOS simulator runtime in Xcode.')
-  if (!buildOnly) {
-    spawnSync('xcrun', ['simctl', 'boot', simulator.udid], { stdio: 'ignore' }) // Fails when it's already booted
-    run('xcrun', ['simctl', 'install', simulator.udid, env.HARNESS_APP_PATH])
-  }
+  if (!buildOnly) run('xcrun', ['simctl', 'install', simulator.udid, env.HARNESS_APP_PATH])
 } else if (runner === 'android-device') {
   const device = findAndroidDevice()
   if (!device) fail('No Android device found. Connect one with USB debugging enabled, and allow this computer on it.')

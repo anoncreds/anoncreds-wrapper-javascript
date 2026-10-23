@@ -84,7 +84,7 @@ jobs:
   # Native 0.79, the oldest SDK with React Native >= 0.77), 55 (0.83) and 58 (0.88, the version in the lockfile).
   test-react-native:
     if: github.event_name != 'pull_request_review' ||  github.event.pull_request.head.ref == 'changeset-release/main'
-    runs-on: ${{ matrix.platform == 'ios' && 'macos-latest' || 'ubuntu-24.04' }}
+    runs-on: ${{ matrix.platform == 'ios' && 'macos-26' || 'ubuntu-24.04' }}
     name: Tests React Native (${{ matrix.platform }}, Expo SDK ${{ matrix.expo-sdk }})
     timeout-minutes: 60
 
@@ -114,6 +114,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # React Native 0.79 ships fmt 11.0.2, which doesn't compile with Xcode 26.6 (the image default). Xcode 26.2 works
+      - name: Use Xcode 26.2
+        if: matrix.platform == 'ios' && matrix.expo-sdk == 53
+        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
 
       - name: Use Expo SDK ${{ matrix.expo-sdk }}
         if: matrix.expo-sdk != 58
