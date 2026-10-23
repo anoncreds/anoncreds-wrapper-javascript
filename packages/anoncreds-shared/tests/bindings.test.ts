@@ -530,7 +530,7 @@ describe('bindings', () => {
       name: 'rev_reg_index',
     })
 
-    const revocationRegistryIndex = revRegIndex === null ? 0 : Number.parseInt(revRegIndex)
+    const revocationRegistryIndex = revRegIndex === null ? 0 : Number.parseInt(revRegIndex, 10)
 
     const revocationState = NativeAnoncreds.instance.createOrUpdateRevocationState({
       revocationRegistryDefinition,
@@ -716,7 +716,7 @@ describe('bindings', () => {
       name: 'rev_reg_index',
     })
 
-    const revocationRegistryIndex = revRegIndex === null ? 0 : Number.parseInt(revRegIndex)
+    const revocationRegistryIndex = revRegIndex === null ? 0 : Number.parseInt(revRegIndex, 10)
 
     const revocationState = NativeAnoncreds.instance.createOrUpdateRevocationState({
       revocationRegistryDefinition,

@@ -1,9 +1,9 @@
 import * as koffi from 'koffi'
 import {
   ByteBufferStruct,
-  CredRevInfoStruct,
   CredentialEntryStructList,
   CredentialProveStructList,
+  CredRevInfoStruct,
   FFI_ERROR_CODE,
   FFI_INT8,
   FFI_INT64,
@@ -16,7 +16,10 @@ import {
   StringListStruct,
 } from '../ffi'
 
-export const nativeBindings: Record<string, [koffi.TypeSpec, Array<koffi.TypeSpec>]> = {
+// koffi doesn't export the type of a type specifier
+type TypeSpec = Parameters<typeof koffi.out>[0]
+
+export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
   // Version and utilities
   anoncreds_version: [koffi.pointer(FFI_STRING), []],
   anoncreds_set_default_logger: [FFI_ERROR_CODE, []],

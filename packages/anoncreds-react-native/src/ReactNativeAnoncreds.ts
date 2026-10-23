@@ -143,11 +143,7 @@ export class ReactNativeAnoncreds implements Anoncreds {
       : undefined
 
     const credential = this.handleError(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-      // @ts-ignore
       this.anoncreds.createCredential({
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore
         ...serializeArguments(options),
         attributeRawValues,
         attributeEncodedValues,

@@ -9,8 +9,8 @@ import { PresentationRequest } from './PresentationRequest'
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
 import { RevocationStatusList } from './RevocationStatusList'
 import { Schema } from './Schema'
-import { W3cCredential } from './W3cCredential'
 import { pushToArray } from './utils'
+import { W3cCredential } from './W3cCredential'
 
 // TODO: Simplify Presentation API (see PresentCredentials object in python wrapper))
 

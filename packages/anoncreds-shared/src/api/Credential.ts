@@ -1,19 +1,17 @@
-import type { ObjectHandle } from '../ObjectHandle'
-import type { JsonObject } from '../types'
-import type { CredentialRevocationConfig } from './CredentialRevocationConfig'
-import type { RevocationStatusList } from './RevocationStatusList'
-
 import { AnoncredsObject } from '../AnoncredsObject'
+import type { ObjectHandle } from '../ObjectHandle'
 import { NativeAnoncreds } from '../register'
-
+import type { JsonObject } from '../types'
 import { CredentialDefinition } from './CredentialDefinition'
 import { CredentialDefinitionPrivate } from './CredentialDefinitionPrivate'
 import { CredentialOffer } from './CredentialOffer'
 import { CredentialRequest } from './CredentialRequest'
 import { CredentialRequestMetadata } from './CredentialRequestMetadata'
+import type { CredentialRevocationConfig } from './CredentialRevocationConfig'
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
-import { W3cCredential } from './W3cCredential'
+import type { RevocationStatusList } from './RevocationStatusList'
 import { pushToArray } from './utils'
+import { W3cCredential } from './W3cCredential'
 
 export type CreateCredentialOptions = {
   credentialDefinition: CredentialDefinition | JsonObject

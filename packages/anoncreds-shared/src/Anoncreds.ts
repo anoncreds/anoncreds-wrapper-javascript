@@ -1,8 +1,8 @@
 // Each platform, Nodejs and React Native, should implement this interface
 // This will make sure that when wrapping both methods to shared functionality
 
-import type { ObjectHandle } from './ObjectHandle'
 import type { AnoncredsErrorObject } from './error'
+import type { ObjectHandle } from './ObjectHandle'
 
 export type NativeCredentialEntry = {
   credential: ObjectHandle

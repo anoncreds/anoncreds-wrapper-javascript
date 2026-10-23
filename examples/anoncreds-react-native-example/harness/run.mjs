@@ -73,7 +73,10 @@ const buildAndroidEmulatorApp = () => {
   if (!fs.existsSync(path.join(exampleDir, 'android'))) expo('prebuild', '--platform', 'android')
 
   const abi = process.env.HARNESS_ANDROID_ABI ?? (process.arch === 'arm64' ? 'arm64-v8a' : 'x86_64')
-  run('./gradlew', ['assembleDebug', `-PreactNativeArchitectures=${abi}`], { cwd: path.join(exampleDir, 'android') })
+  // The build cache reuses task outputs from earlier builds, in CI too (setup-gradle in ci.yml caches it)
+  run('./gradlew', ['assembleDebug', `-PreactNativeArchitectures=${abi}`, '--build-cache'], {
+    cwd: path.join(exampleDir, 'android'),
+  })
   return path.join(exampleDir, 'android/app/build/outputs/apk/debug/app-debug.apk')
 }
 

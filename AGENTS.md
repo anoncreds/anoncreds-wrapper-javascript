@@ -33,7 +33,9 @@ The example uses the newest Expo SDK. CI also runs the tests with older SDKs, an
 ## Dependencies
 
 - react and react-native are in the `catalog:` in `pnpm-workspace.yaml`, shared by the React Native package and the example, so Metro bundles a single copy. Bump them there, with the Expo SDK of the example.
+- pnpm 12 (`packageManager`). Its settings are in `pnpm-workspace.yaml`, `.npmrc` is only read for auth. pnpm only runs install scripts of packages listed in `allowBuilds`, and doesn't resolve versions published less than a day ago.
 - The repo uses pnpm's hoisted node linker. After a big dependency change, delete `node_modules` and install again if the build fails on modules that can't be found: pnpm leaves outdated nested packages behind.
+- The packages use the newest TypeScript from the catalog. The example pins the TypeScript version its Expo SDK supports.
 
 ## Commits and releases
 
