@@ -38,8 +38,12 @@ minimumReleaseAgeExclude:
   - '@noxcturnal/noxcturnal-win32-x64-msvc@0.1.9'
   - noxcturnal@0.1.9
 
-# Harness 1.6.0 fails the run when the app's JS thread doesn't answer its heartbeat within 20 seconds, and the anoncreds
-# calls and the test bundle evaluation block it longer than that on CI's iOS simulators. The patch raises the timeout to
-# 120 seconds. Remove it once a Harness release includes https://github.com/callstackincubator/react-native-harness/pull/226
+# Patches for React Native Harness 1.6.0, until a release fixes them:
+# - bridge: Harness fails the run when the app's JS thread doesn't answer its heartbeat within 20 seconds, and the
+#   anoncreds calls and the test bundle evaluation block it longer than that on CI's iOS simulators. Raises the timeout
+#   to 120 seconds. Remove once a release includes https://github.com/callstackincubator/react-native-harness/pull/226
+# - bundler-metro: the serializer reads the `default` export of Metro modules that only have one since Metro 0.83.3, so
+#   bundling fails with the Metro of Expo SDK 53 (0.82). Falls back to the module itself. Not fixed upstream yet
 patchedDependencies:
   '@react-native-harness/bridge@1.6.0': patches/@react-native-harness__bridge@1.6.0.patch
+  '@react-native-harness/bundler-metro@1.6.0': patches/@react-native-harness__bundler-metro@1.6.0.patch
