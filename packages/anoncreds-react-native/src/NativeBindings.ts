@@ -31,15 +31,15 @@ export type NativeBindings = {
     credentialDefinition: Handle
     revocationRegistryDefinition: Handle
     revocationRegistryDefinitionPrivate: Handle
-    currentRevocationStatusList: Handle
-    issued?: number[]
-    revoked?: number[]
-    timestamp?: number
+    revocationStatusList: Handle
+    issued: number[]
+    revoked: number[]
+    timestamp: number
   }): ReturnObject<Handle>
 
   updateRevocationStatusListTimestampOnly(options: {
     timestamp: number
-    currentRevocationStatusList: Handle
+    revocationStatusList: Handle
   }): ReturnObject<Handle>
 
   createCredentialDefinition(options: {
@@ -127,10 +127,8 @@ export type NativeBindings = {
     maximumCredentialNumber: number
     tailsDirectoryPath?: string
   }): ReturnObject<{
-    registryDefinition: Handle
-    registryDefinitionPrivate: Handle
-    registryEntry: Handle
-    registryInitDelta: Handle
+    revocationRegistryDefinition: Handle
+    revocationRegistryDefinitionPrivate: Handle
   }>
 
   createOrUpdateRevocationState(options: {

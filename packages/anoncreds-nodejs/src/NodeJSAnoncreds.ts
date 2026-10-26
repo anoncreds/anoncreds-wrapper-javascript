@@ -9,11 +9,11 @@ import type {
 } from '@hyperledger/anoncreds-shared'
 import { AnoncredsError, ObjectHandle } from '@hyperledger/anoncreds-shared'
 import {
-  type ByteBufferStructType,
   allocateByteBuffer,
   allocateInt8Buffer,
   allocatePointer,
   allocateStringBuffer,
+  type ByteBufferStructType,
   byteBufferToUint8Array,
   serializeArguments,
 } from './ffi'
@@ -958,15 +958,6 @@ export class NodeJSAnoncreds implements Anoncreds {
       count: Object.keys(attributeRawValues).length,
       data: Object.values(attributeRawValues),
     }
-  }
-
-  private convertAttributeEncodedValues(attributeEncodedValues?: Record<string, string>) {
-    return attributeEncodedValues
-      ? {
-          count: Object.keys(attributeEncodedValues).length,
-          data: Object.values(attributeEncodedValues),
-        }
-      : undefined
   }
 
   private convertRevocationConfiguration(revocationConfiguration?: NativeCredentialRevocationConfig) {

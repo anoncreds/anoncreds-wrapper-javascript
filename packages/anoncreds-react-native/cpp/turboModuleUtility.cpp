@@ -519,15 +519,18 @@ FfiCredRevInfo jsiToValue(jsi::Runtime &rt, jsi::Object &options,
 
   if (value.isObject()) {
     jsi::Object valueAsObject = value.asObject(rt);
-    auto registryDefinition =
-        jsiToValue<ObjectHandle>(rt, valueAsObject, "registryDefinition");
+    auto registryDefinition = jsiToValue<ObjectHandle>(
+        rt, valueAsObject, "revocationRegistryDefinition");
     auto registryDefinitionPrivate = jsiToValue<ObjectHandle>(
-        rt, valueAsObject, "registryDefinitionPrivate");
+        rt, valueAsObject, "revocationRegistryDefinitionPrivate");
+    auto statusList =
+        jsiToValue<ObjectHandle>(rt, valueAsObject, "revocationStatusList");
     auto registryIndex =
         jsiToValue<int64_t>(rt, valueAsObject, "registryIndex");
 
     return FfiCredRevInfo{.reg_def = registryDefinition,
                           .reg_def_private = registryDefinitionPrivate,
+                          .status_list = statusList,
                           .reg_idx = registryIndex};
   }
 

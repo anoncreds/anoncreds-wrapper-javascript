@@ -584,7 +584,7 @@ jsi::Value createRevocationStatusList(jsi::Runtime &rt, jsi::Object options) {
   ErrorCode code = anoncreds_create_revocation_status_list(
       credentialDefinition, revocationRegistryDefinitionId.c_str(), 
       revocationRegistryDefinition, revocationRegistryDefinitionPrivate,
-      issuerId.c_str(), timestamp, issuanceByDefault, &out);
+      issuerId.c_str(), issuanceByDefault, timestamp, &out);
 
   return createReturnValue(rt, code, &out);
 }

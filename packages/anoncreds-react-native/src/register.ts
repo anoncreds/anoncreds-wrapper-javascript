@@ -11,7 +11,7 @@ export const register = (): NativeBindings => {
   let doesAnoncredsExist = false
   try {
     doesAnoncredsExist = Boolean(_anoncreds)
-  } catch (e) {
+  } catch {
     doesAnoncredsExist = false
   }
 

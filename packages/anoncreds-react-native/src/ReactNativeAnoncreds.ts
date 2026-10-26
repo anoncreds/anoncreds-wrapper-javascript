@@ -45,7 +45,13 @@ export class ReactNativeAnoncreds implements Anoncreds {
     timestamp: number
     currentRevocationStatusList: ObjectHandle
   }): ObjectHandle {
-    const handle = this.handleError(this.anoncreds.updateRevocationStatusListTimestampOnly(serializeArguments(options)))
+    const { timestamp, currentRevocationStatusList } = serializeArguments(options)
+    const handle = this.handleError(
+      this.anoncreds.updateRevocationStatusListTimestampOnly({
+        timestamp,
+        revocationStatusList: currentRevocationStatusList,
+      })
+    )
     return new ObjectHandle(handle)
   }
 
@@ -58,7 +64,16 @@ export class ReactNativeAnoncreds implements Anoncreds {
     revoked?: number[]
     timestamp?: number
   }): ObjectHandle {
-    const handle = this.handleError(this.anoncreds.updateRevocationStatusList(serializeArguments(options)))
+    const { currentRevocationStatusList, issued, revoked, timestamp, ...rest } = serializeArguments(options)
+    const handle = this.handleError(
+      this.anoncreds.updateRevocationStatusList({
+        ...rest,
+        revocationStatusList: currentRevocationStatusList,
+        issued: issued ?? [],
+        revoked: revoked ?? [],
+        timestamp: timestamp ?? -1,
+      })
+    )
     return new ObjectHandle(handle)
   }
 
@@ -128,11 +143,7 @@ export class ReactNativeAnoncreds implements Anoncreds {
       : undefined
 
     const credential = this.handleError(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-      // @ts-ignore
       this.anoncreds.createCredential({
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore
         ...serializeArguments(options),
         attributeRawValues,
         attributeEncodedValues,
@@ -265,13 +276,13 @@ export class ReactNativeAnoncreds implements Anoncreds {
     revocationRegistryDefinition: ObjectHandle
     revocationRegistryDefinitionPrivate: ObjectHandle
   } {
-    const { registryDefinition, registryDefinitionPrivate } = this.handleError(
+    const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate } = this.handleError(
       this.anoncreds.createRevocationRegistryDefinition(serializeArguments(options))
     )
 
     return {
-      revocationRegistryDefinitionPrivate: new ObjectHandle(registryDefinitionPrivate),
-      revocationRegistryDefinition: new ObjectHandle(registryDefinition),
+      revocationRegistryDefinitionPrivate: new ObjectHandle(revocationRegistryDefinitionPrivate),
+      revocationRegistryDefinition: new ObjectHandle(revocationRegistryDefinition),
     }
   }
 

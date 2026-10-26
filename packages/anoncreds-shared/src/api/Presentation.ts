@@ -1,14 +1,12 @@
-import type { ObjectHandle } from '../ObjectHandle'
-import type { JsonObject } from '../types'
-import type { RevocationRegistry } from './RevocationRegistry'
-
 import { AnoncredsObject } from '../AnoncredsObject'
+import type { ObjectHandle } from '../ObjectHandle'
 import { NativeAnoncreds } from '../register'
-
+import type { JsonObject } from '../types'
 import { Credential } from './Credential'
 import { CredentialDefinition } from './CredentialDefinition'
 import { CredentialRevocationState } from './CredentialRevocationState'
 import { PresentationRequest } from './PresentationRequest'
+import type { RevocationRegistry } from './RevocationRegistry'
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
 import { RevocationStatusList } from './RevocationStatusList'
 import { Schema } from './Schema'

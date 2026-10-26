@@ -2,7 +2,7 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "paths": {
-      "@hyperledger/*": ["packages/*/src"]
+      "@hyperledger/*": ["./packages/*/src"]
     }
   }
 }

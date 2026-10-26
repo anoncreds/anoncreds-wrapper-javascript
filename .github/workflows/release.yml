@@ -20,31 +20,30 @@ jobs:
       published: ${{ steps.changesets.outputs.published }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - name: Setup NodeJS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: "pnpm"
-
-      - name: Update npm
-        run: npm install -g npm@^11
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          title: "chore(release): new version"
-          commit: "chore(release): new version"
-          publish: pnpm release
-          version: pnpm changeset-version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pr-title: "chore(release): new version"
+          commit-message: "chore(release): new version"
+          publish-script: pnpm release
+          version-script: pnpm changeset-version
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # The next step creates one GitHub release for the version instead of one per package
+          create-github-releases: false
+          push-git-tags: false
 
       - name: Get current package version
         id: get_version
@@ -52,7 +51,7 @@ jobs:
 
       - name: Create Github Release
         if: steps.changesets.outputs.published == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.CURRENT_PACKAGE_VERSION }}
 
@@ -63,17 +62,14 @@ jobs:
     if: always() && github.event_name == 'push' && needs.release-stable.outputs.published == 'false'
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - name: Setup NodeJS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: "pnpm"
-
-      - name: Update npm
-        run: npm install -g npm@^11
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
