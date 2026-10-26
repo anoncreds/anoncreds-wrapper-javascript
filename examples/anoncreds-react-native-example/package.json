@@ -8,6 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
+    "check-types": "tsc --noEmit",
     "test:android": "node harness/run.mjs android",
     "test:ios": "node harness/run.mjs ios",
     "test:android:device": "node harness/run.mjs android-device",

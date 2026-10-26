@@ -14,12 +14,11 @@ JavaScript wrappers for [AnonCreds](https://github.com/hyperledger/anoncreds-rs)
 Run from the repo root after every change, and fix what they find:
 
 - `pnpm style:fix`: Biome formatting and lint.
-- `pnpm types:check` and `pnpm build`.
-- `npx tsc --noEmit` in the example app.
+- `pnpm types:check` (the packages and the example app) and `pnpm build`.
 
 ## Tests
 
-The tests in `packages/anoncreds-shared/tests` run on Node.js with Vitest (`pnpm test`) and in the example app with [React Native Harness](https://react-native-harness.dev). In the app, `tests/shared.harness.ts` loads all of them and Metro resolves their `vitest` import to `react-native-harness`, so write them with the `describe` / `test` / `expect` that both have. Use the `react-native-harness` skill (`.claude/skills/react-native-harness/SKILL.md`) to write or debug Harness tests.
+The tests in `packages/anoncreds-shared/tests` run on Node.js with Vitest (`pnpm test`) and in the example app with [React Native Harness](https://react-native-harness.dev). In the app, `tests/shared.harness.ts` loads all of them and Metro resolves their `vitest` import to `react-native-harness`, so write them with the `describe` / `test` / `expect` that both have. Use the `react-native-harness` skill (`.claude/skills/react-native-harness/SKILL.md`) to write or debug Harness tests. Run the Harness CLI that the repo installs, e.g. `pnpm exec harness skill get core`, not a global one: the repo pins Harness and patches it (`patches/`).
 
 From the repo root:
 
