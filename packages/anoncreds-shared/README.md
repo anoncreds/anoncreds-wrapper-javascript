@@ -43,20 +43,3 @@ import '@hyperledger/anoncreds-nodejs'
 // register.native.ts
 import '@hyperledger/anoncreds-react-native'
 ```
-
-An alterative approach is to first try to require the Node.JS package, and otherwise require the React Native package:
-
-```typescript
-try {
-  require('@hyperledger/anoncreds-nodejs')
-} catch (error) {
-  try {
-    require('@hyperledger/anoncreds-react-native')
-  } catch (error) {
-    throw new Error('Could not load anoncreds bindings')
-  }
-}
-```
-
-How you approach it is up to you, as long as the native binding are called
-before any actions are performed on the anoncreds library.
