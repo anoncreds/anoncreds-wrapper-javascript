@@ -23,11 +23,6 @@ export class CredentialRevocationConfig {
     this.registryIndex = options.registryIndex
   }
 
-  public clear() {
-    this.registryDefinition.handle.clear()
-    this.registryDefinitionPrivate.handle.clear()
-  }
-
   public get native(): NativeCredentialRevocationConfig {
     return {
       revocationRegistryDefinition: this.registryDefinition.handle,

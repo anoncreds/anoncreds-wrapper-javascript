@@ -451,18 +451,20 @@ test('create and verify presentation passing only JSON objects as parameters', (
     credentialOffer: credentialOffer.toJson(),
   })
 
+  const revocationConfiguration = new CredentialRevocationConfig({
+    registryDefinition: revocationRegistryDefinition,
+    registryDefinitionPrivate: revocationRegistryDefinitionPrivate,
+    statusList: revocationStatusList,
+    registryIndex: 9,
+  })
+
   const credential = Credential.create({
     credentialDefinition: credentialDefinition.toJson(),
     credentialDefinitionPrivate: credentialDefinitionPrivate.toJson(),
     credentialOffer: credentialOffer.toJson(),
     credentialRequest: credentialRequest.toJson(),
     attributeRawValues: { name: 'Alex', height: '175', age: '28', sex: 'male' },
-    revocationConfiguration: new CredentialRevocationConfig({
-      registryDefinition: revocationRegistryDefinition,
-      registryDefinitionPrivate: revocationRegistryDefinitionPrivate,
-      statusList: revocationStatusList,
-      registryIndex: 9,
-    }),
+    revocationConfiguration,
   })
 
   const credReceived = credential.process({

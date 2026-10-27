@@ -1,4 +1,4 @@
-import { TextDecoder, TextEncoder } from 'node:util'
+import { TextEncoder } from 'node:util'
 import type {
   Anoncreds,
   AnoncredsErrorObject,
@@ -14,7 +14,7 @@ import {
   allocatePointer,
   allocateStringBuffer,
   type ByteBufferStructType,
-  byteBufferToUint8Array,
+  byteBufferToString,
   serializeArguments,
 } from './ffi'
 import { getNativeAnonCreds } from './library'
@@ -842,10 +842,8 @@ export class NodeJSAnoncreds implements Anoncreds {
     const errorCode = this.nativeAnoncreds.anoncreds_object_get_json(objectHandle, ret)
     this.handleError(errorCode)
 
-    const returnValue = handleReturnPointer<{ data: Uint8Array; len: number }>(ret)
-    const jsonAsArray = byteBufferToUint8Array(returnValue)
-
-    const output = new TextDecoder().decode(jsonAsArray)
+    const returnValue = handleReturnPointer<{ data: unknown; len: number }>(ret)
+    const output = byteBufferToString(returnValue)
 
     this.nativeAnoncreds.anoncreds_buffer_free(returnValue)
 

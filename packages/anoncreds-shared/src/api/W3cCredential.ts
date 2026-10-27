@@ -10,7 +10,6 @@ import { CredentialRequest } from './CredentialRequest'
 import { CredentialRequestMetadata } from './CredentialRequestMetadata'
 import type { CredentialRevocationConfig } from './CredentialRevocationConfig'
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
-import type { RevocationStatusList } from './RevocationStatusList'
 import { pushToArray } from './utils'
 
 export type CreateW3cCredentialOptions = {
@@ -19,9 +18,7 @@ export type CreateW3cCredentialOptions = {
   credentialOffer: CredentialOffer | JsonObject
   credentialRequest: CredentialRequest | JsonObject
   attributeRawValues: Record<string, string>
-  revocationRegistryId?: string
   revocationConfiguration?: CredentialRevocationConfig
-  revocationStatusList?: RevocationStatusList | JsonObject
   w3cVersion?: string
 }
 
