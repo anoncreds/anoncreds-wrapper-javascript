@@ -9,6 +9,6 @@ export default defineConfig({
   test: {
     testTimeout: 20000,
     watch: false,
-    setupFiles: ['packages/anoncreds-nodejs/tests/setup.ts'],
+    setupFiles: ['packages/anoncreds-nodejs/tests/setup.ts', 'packages/anoncreds-shared/tests/setup.ts'],
   },
 })

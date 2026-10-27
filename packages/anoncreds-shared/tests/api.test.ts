@@ -16,6 +16,7 @@ import {
   W3cPresentation,
 } from '@hyperledger/anoncreds-shared'
 import { describe, expect, test } from 'vitest'
+import { free } from './utils/free'
 
 describe('API', () => {
   test('create and verify presentation', () => {
@@ -201,6 +202,23 @@ describe('API', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      presentationRequest,
+      schema,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate,
+      revocationStatusList,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      revocationState,
+      presentation
+    )
   })
 
   test('create and verify presentation (no revocation use case)', () => {
@@ -341,6 +359,19 @@ describe('API', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      schema,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      presentationRequest,
+      presentation
+    )
   })
 })
 
@@ -521,7 +552,8 @@ test('create and verify presentation passing only JSON objects as parameters', (
 
   expect(typeof presentation.handle.handle).toBe('number')
 
-  const verify = Presentation.fromJson(presentation.toJson()).verify({
+  const presentationFromJson = Presentation.fromJson(presentation.toJson())
+  const verify = presentationFromJson.verify({
     presentationRequest,
     schemas: { 'mock:uri': schema.toJson() },
     credentialDefinitions: { 'mock:uri': credentialDefinition.toJson() },
@@ -530,6 +562,22 @@ test('create and verify presentation passing only JSON objects as parameters', (
   })
 
   expect(verify).toBeTruthy()
+
+  free(
+    schema,
+    credentialDefinition,
+    credentialDefinitionPrivate,
+    keyCorrectnessProof,
+    revocationRegistryDefinition,
+    revocationRegistryDefinitionPrivate,
+    revocationStatusList,
+    credentialOffer,
+    credentialRequest,
+    credentialRequestMetadata,
+    credential,
+    presentation,
+    presentationFromJson
+  )
 })
 
 describe('API W3C', () => {
@@ -719,6 +767,27 @@ describe('API W3C', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      presentationRequest,
+      schema,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate,
+      revocationStatusList,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      legacyCredential,
+      legacyCredentialFrom,
+      w3cCredential,
+      convertedW3cCredential,
+      revocationState,
+      presentation
+    )
   })
 
   test('create and verify w3c presentation (no revocation use case)', () => {
@@ -834,5 +903,18 @@ describe('API W3C', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      schema,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      presentationRequest,
+      presentation
+    )
   })
 })

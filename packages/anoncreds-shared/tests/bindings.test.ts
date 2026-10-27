@@ -1,5 +1,6 @@
 import { NativeAnoncreds } from '@hyperledger/anoncreds-shared'
 import { describe, expect, test } from 'vitest'
+import { free } from './utils/free'
 
 const ENTROPY = 'entropy'
 
@@ -38,6 +39,8 @@ describe('bindings', () => {
       issuerId: 'mock:uri',
       attrNames: ['attr-1'],
     })
+
+    free(schemaObj)
   })
 
   test('create credential definition', () => {
@@ -75,6 +78,8 @@ describe('bindings', () => {
 
     expect(keyCorrectnessProofJson).toHaveProperty('c')
     expect(keyCorrectnessProofJson).toHaveProperty('xr_cap')
+
+    free(schemaObj, credentialDefinition, credentialDefinitionPrivate, keyCorrectnessProof)
   })
 
   test('encode credential attributes', () => {
@@ -94,23 +99,25 @@ describe('bindings', () => {
       attributeNames: ['attr-1'],
     })
 
-    const { credentialDefinition } = NativeAnoncreds.instance.createCredentialDefinition({
-      schemaId: 'mock:uri',
-      issuerId: 'mock:uri',
-      schema: schemaObj,
-      signatureType: 'CL',
-      supportRevocation: true,
-      tag: 'TAG',
-    })
+    const { credentialDefinition, credentialDefinitionPrivate, keyCorrectnessProof } =
+      NativeAnoncreds.instance.createCredentialDefinition({
+        schemaId: 'mock:uri',
+        issuerId: 'mock:uri',
+        schema: schemaObj,
+        signatureType: 'CL',
+        supportRevocation: true,
+        tag: 'TAG',
+      })
 
-    const { revocationRegistryDefinition } = NativeAnoncreds.instance.createRevocationRegistryDefinition({
-      credentialDefinitionId: 'mock:uri',
-      credentialDefinition,
-      issuerId: 'mock:uri',
-      tag: 'default',
-      revocationRegistryType: 'CL_ACCUM',
-      maximumCredentialNumber: 100,
-    })
+    const { revocationRegistryDefinition, revocationRegistryDefinitionPrivate } =
+      NativeAnoncreds.instance.createRevocationRegistryDefinition({
+        credentialDefinitionId: 'mock:uri',
+        credentialDefinition,
+        issuerId: 'mock:uri',
+        tag: 'default',
+        revocationRegistryType: 'CL_ACCUM',
+        maximumCredentialNumber: 100,
+      })
 
     const maximumCredentialNumber = NativeAnoncreds.instance.revocationRegistryDefinitionGetAttribute({
       objectHandle: revocationRegistryDefinition,
@@ -129,6 +136,15 @@ describe('bindings', () => {
         maxCredNum: 100,
       },
     })
+
+    free(
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate
+    )
   })
 
   test('create link secret', () => {
@@ -146,14 +162,15 @@ describe('bindings', () => {
       attributeNames: ['attr-1'],
     })
 
-    const { keyCorrectnessProof } = NativeAnoncreds.instance.createCredentialDefinition({
-      schemaId: 'mock:uri',
-      schema: schemaObj,
-      issuerId: 'mock:uri',
-      signatureType: 'CL',
-      supportRevocation: true,
-      tag: 'TAG',
-    })
+    const { credentialDefinition, credentialDefinitionPrivate, keyCorrectnessProof } =
+      NativeAnoncreds.instance.createCredentialDefinition({
+        schemaId: 'mock:uri',
+        schema: schemaObj,
+        issuerId: 'mock:uri',
+        signatureType: 'CL',
+        supportRevocation: true,
+        tag: 'TAG',
+      })
 
     const credOfferObj = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
@@ -168,6 +185,8 @@ describe('bindings', () => {
       nonce: expect.anything(),
       key_correctness_proof: expect.anything(),
     })
+
+    free(schemaObj, credentialDefinition, credentialDefinitionPrivate, keyCorrectnessProof, credOfferObj)
   })
 
   test('create credential request', () => {
@@ -178,14 +197,15 @@ describe('bindings', () => {
       attributeNames: ['attr-1'],
     })
 
-    const { credentialDefinition, keyCorrectnessProof } = NativeAnoncreds.instance.createCredentialDefinition({
-      schemaId: 'mock:uri',
-      issuerId: 'mock:uri',
-      schema: schemaObj,
-      signatureType: 'CL',
-      supportRevocation: true,
-      tag: 'TAG',
-    })
+    const { credentialDefinition, credentialDefinitionPrivate, keyCorrectnessProof } =
+      NativeAnoncreds.instance.createCredentialDefinition({
+        schemaId: 'mock:uri',
+        issuerId: 'mock:uri',
+        schema: schemaObj,
+        signatureType: 'CL',
+        supportRevocation: true,
+        tag: 'TAG',
+      })
 
     const credentialOffer = NativeAnoncreds.instance.createCredentialOffer({
       schemaId: 'mock:uri',
@@ -217,6 +237,16 @@ describe('bindings', () => {
     expect(credReqMetadataParsed.link_secret_name).toBe(linkSecretId)
     expect(credReqMetadataParsed.link_secret_blinding_data).toBeDefined()
     expect(credReqMetadataParsed.nonce).toBeDefined()
+
+    free(
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata
+    )
   })
 
   test('create and receive credential', () => {
@@ -319,6 +349,21 @@ describe('bindings', () => {
     expect(credReceivedParsed.rev_reg_id).toBe('mock:uri')
     expect(credReceivedParsed.signature).toBeDefined()
     expect(credReceivedParsed.witness).toBeDefined()
+
+    free(
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate,
+      revocationStatusList,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      credReceived
+    )
   })
 
   test('create and receive w3c credential', () => {
@@ -409,6 +454,21 @@ describe('bindings', () => {
 
     const credReceivedJson = NativeAnoncreds.instance.getJson({ objectHandle: credReceived })
     expect(credReceivedJson).toBeDefined()
+
+    free(
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate,
+      revocationStatusList,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      credReceived
+    )
   })
 
   test('create and verify presentation', () => {
@@ -595,6 +655,24 @@ describe('bindings', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      presentationRequest,
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate,
+      revocationStatusList,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      credentialReceived,
+      revocationState,
+      presentation
+    )
   })
 
   test('create and verify w3c presentation', () => {
@@ -774,6 +852,25 @@ describe('bindings', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      presentationRequest,
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      revocationRegistryDefinition,
+      revocationRegistryDefinitionPrivate,
+      revocationStatusList,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      credentialReceived,
+      credentialProofDetails,
+      revocationState,
+      presentation
+    )
   })
 
   test('create and verify presentation (no revocation use case)', () => {
@@ -919,6 +1016,20 @@ describe('bindings', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      credReceived,
+      presentationRequest,
+      presentation
+    )
   })
 
   test('create and verify w3c presentation (no revocation use case)', () => {
@@ -1037,5 +1148,19 @@ describe('bindings', () => {
     })
 
     expect(verify).toBeTruthy()
+
+    free(
+      schemaObj,
+      credentialDefinition,
+      credentialDefinitionPrivate,
+      keyCorrectnessProof,
+      credentialOffer,
+      credentialRequest,
+      credentialRequestMetadata,
+      credential,
+      credReceived,
+      presentationRequest,
+      presentation
+    )
   })
 })

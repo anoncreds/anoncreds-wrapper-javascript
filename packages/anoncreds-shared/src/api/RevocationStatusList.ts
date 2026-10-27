@@ -82,6 +82,8 @@ export class RevocationStatusList extends AnoncredsObject {
       currentRevocationStatusList: this.handle,
     })
 
+    // We can discard previous handle and store the new one
+    this.handle.clear()
     this.handle = updatedRevocationStatusList
   }
 
@@ -117,6 +119,8 @@ export class RevocationStatusList extends AnoncredsObject {
         currentRevocationStatusList: this.handle,
       })
 
+      // We can discard previous handle and store the new one
+      this.handle.clear()
       this.handle = updatedRevocationStatusList
     } finally {
       for (const handle of objectHandles) {

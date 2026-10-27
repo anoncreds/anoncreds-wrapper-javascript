@@ -24,6 +24,16 @@ void assertValueIsObject(jsi::Runtime &rt, const jsi::Value *val) {
   val->asObject(rt);
 }
 
+jsi::Value anoncredsStringToValue(jsi::Runtime &rt, const char *value) {
+  if (value == nullptr)
+    return jsi::Value::null();
+
+  // AnonCreds returns UTF-8, which createFromAscii would mangle
+  auto string = jsi::String::createFromUtf8(rt, std::string(value));
+  anoncreds_string_free(const_cast<char *>(value));
+  return jsi::Value(std::move(string));
+}
+
 template <>
 jsi::Value createReturnValue(jsi::Runtime &rt, ErrorCode code,
                              nullptr_t value) {
@@ -44,13 +54,8 @@ jsi::Value createReturnValue(jsi::Runtime &rt, ErrorCode code,
   auto object = jsi::Object(rt);
 
   if (code == ErrorCode::Success) {
-    auto isNullptr = value == nullptr || *value == nullptr;
-    auto valueWithoutNullptr = isNullptr
-                                   ? jsi::Value::null()
-                                   : jsi::String::createFromAscii(rt, *value);
-    object.setProperty(rt, "value", valueWithoutNullptr);
-
-    if (!isNullptr) anoncreds_string_free((char *)*value);
+    object.setProperty(rt, "value",
+                       anoncredsStringToValue(rt, value ? *value : nullptr));
   }
 
   object.setProperty(rt, "errorCode", int(code));
@@ -293,221 +298,194 @@ ObjectHandle jsiToValue(jsi::Runtime &rt, jsi::Object &options,
                      errorPrefix + name + errorInfix + "ObjectHandle.handle");
 };
 
-template <>
-FfiCredentialEntry jsiToValue(jsi::Runtime &rt, jsi::Object &options,
-                              const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-  if ((value.isNull() || value.isUndefined()) && optional)
-    return FfiCredentialEntry{};
 
-  if (value.isObject()) {
-    jsi::Object valueAsObject = value.asObject(rt);
-    auto credential = jsiToValue<ObjectHandle>(rt, valueAsObject, "credential");
-    auto timestamp = jsiToValue<int32_t>(rt, valueAsObject, "timestamp", true);
-    auto revocationState =
-        jsiToValue<ObjectHandle>(rt, valueAsObject, "revocationState", true);
-
-    return FfiCredentialEntry{.credential = credential,
-                              .timestamp = timestamp,
-                              .rev_state = revocationState};
-  }
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "CredentialEntry");
-};
-
-template <>
-FfiCredentialProve jsiToValue(jsi::Runtime &rt, jsi::Object &options,
-                              const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-  if ((value.isNull() || value.isUndefined()) && optional)
-    return FfiCredentialProve{};
-
-  if (value.isObject()) {
-    jsi::Object valueAsObject = value.asObject(rt);
-    auto entryIndex = jsiToValue<int64_t>(rt, valueAsObject, "entryIndex");
-    auto referent = jsiToValue<std::string>(rt, valueAsObject, "referent");
-    auto isPredicate = jsiToValue<int8_t>(rt, valueAsObject, "isPredicate");
-    auto reveal = jsiToValue<int8_t>(rt, valueAsObject, "reveal");
-
-    return FfiCredentialProve{.entry_idx = entryIndex,
-                              .is_predicate = isPredicate,
-                              .referent = referent.c_str(),
-                              .reveal = reveal};
-  }
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "CredentialProve");
-};
-
-template <>
-FfiList_FfiCredentialEntry
-jsiToValue<FfiList_FfiCredentialEntry>(jsi::Runtime &rt, jsi::Object &options,
-                                       const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-
-  if (value.isObject() && value.asObject(rt).isArray(rt)) {
-    auto arr = value.asObject(rt).asArray(rt);
-    auto len = arr.length(rt);
-
-    auto credentialEntry = new FfiCredentialEntry[arrayMaxSize];
-
-    // TODO: error Handling
-    for (int i = 0; i < len; i++) {
-      auto element = arr.getValueAtIndex(rt, i);
-      auto valueAsObject = element.asObject(rt);
-
-      auto credential =
-          jsiToValue<ObjectHandle>(rt, valueAsObject, "credential");
-      auto timestamp =
-          jsiToValue<int32_t>(rt, valueAsObject, "timestamp", true);
-      auto revocationState =
-          jsiToValue<ObjectHandle>(rt, valueAsObject, "revocationState", true);
-
-      credentialEntry[i] = *new FfiCredentialEntry[sizeof(FfiCredentialEntry)];
-      credentialEntry[i] = FfiCredentialEntry{.credential = credential,
-                                              .timestamp = timestamp,
-                                              .rev_state = revocationState};
-    }
-
-    return FfiList_FfiCredentialEntry{.count = len, .data = credentialEntry};
-  }
-
-  if (optional)
-    return FfiList_FfiCredentialEntry{};
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "Array<number>");
-}
-
-template <>
-FfiList_FfiCredentialProve
-jsiToValue<FfiList_FfiCredentialProve>(jsi::Runtime &rt, jsi::Object &options,
-                                       const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-
-  if (value.isObject() && value.asObject(rt).isArray(rt)) {
-    auto arr = value.asObject(rt).asArray(rt);
-    auto len = arr.length(rt);
-
-    auto credentialProve = new FfiCredentialProve[len];
-
-    // TODO: error Handling
-    for (int i = 0; i < len; i++) {
-      auto element = arr.getValueAtIndex(rt, i);
-      auto valueAsObject = element.asObject(rt);
-
-      auto entryIndex = jsiToValue<int64_t>(rt, valueAsObject, "entryIndex");
-      auto referent = jsiToValue<std::string>(rt, valueAsObject, "referent");
-      auto isPredicate = jsiToValue<int8_t>(rt, valueAsObject, "isPredicate");
-      auto reveal = jsiToValue<int8_t>(rt, valueAsObject, "reveal");
-
-      char *ffiStr = new char[referent.length() + 1];
-      std::copy(referent.begin(), referent.end(), ffiStr);
-      ffiStr[referent.length()] = '\0';
-
-      credentialProve[i] = *new FfiCredentialProve[sizeof(FfiCredentialProve)];
-      credentialProve[i] = FfiCredentialProve{.entry_idx = entryIndex,
-                                              .is_predicate = isPredicate,
-                                              .referent = ffiStr,
-                                              .reveal = reveal};
-    }
-    return FfiList_FfiCredentialProve{.count = len, .data = credentialProve};
-  }
-
-  if (optional)
-    return FfiList_FfiCredentialProve{};
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "Array<number>");
-}
-
-template <>
-FfiList_ObjectHandle
-jsiToValue<FfiList_ObjectHandle>(jsi::Runtime &rt, jsi::Object &options,
-                                 const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-
-  if (value.isObject() && value.asObject(rt).isArray(rt)) {
-    auto arr = value.asObject(rt).asArray(rt);
-    auto len = arr.length(rt);
-
-    auto objectHandle = new ObjectHandle[arrayMaxSize];
-
-    // TODO: error Handling
-    for (int i = 0; i < len; i++) {
-      auto element = arr.getValueAtIndex(rt, i);
-      auto valueAsNumber = element.asNumber();
-
-      objectHandle[i] = *new size_t[sizeof(valueAsNumber)];
-      objectHandle[i] = size_t(valueAsNumber);
-    }
-    return FfiList_ObjectHandle{.count = len, .data = objectHandle};
-  }
-
-  if (optional)
-    return FfiList_ObjectHandle{};
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "Array<number>");
-}
-
-template <>
-FfiList_FfiStr jsiToValue<FfiList_FfiStr>(jsi::Runtime &rt,
+// The array in options[name]. Missing optional arrays are empty
+static std::vector<jsi::Value> jsiToArray(jsi::Runtime &rt,
                                           jsi::Object &options,
-                                          const char *name, bool optional) {
+                                          const char *name, bool optional,
+                                          const std::string &type) {
   jsi::Value value = options.getProperty(rt, name);
+  if ((value.isNull() || value.isUndefined()) && optional)
+    return {};
 
-  if (value.isObject() && value.asObject(rt).isArray(rt)) {
-    auto arr = value.asObject(rt).asArray(rt);
-    auto len = arr.length(rt);
+  if (!value.isObject() || !value.asObject(rt).isArray(rt))
+    throw jsi::JSError(rt, errorPrefix + name + errorInfix + type);
 
-    if (len == 0) {
-      return FfiList_FfiStr{};
-    }
-    char **ffiStr = new char *[len];
+  jsi::Array array = value.asObject(rt).asArray(rt);
+  size_t length = array.length(rt);
 
-    for (int i = 0; i < len; i++) {
-      // TODO: check if string first
-      jsi::Value element = arr.getValueAtIndex(rt, i);
-      std::string s = element.asString(rt).utf8(rt);
-      ffiStr[i] = new char[s.length() + 1];
-      std::copy(s.begin(), s.end(), ffiStr[i]);
-      ffiStr[i][s.length()] = '\0';
-    }
-
-    return FfiList_FfiStr{.count = len, .data = ffiStr};
+  std::vector<jsi::Value> elements;
+  elements.reserve(length);
+  for (size_t i = 0; i < length; i++) {
+    elements.push_back(array.getValueAtIndex(rt, i));
   }
+  return elements;
+}
 
-  if (optional) {
-    return FfiList_FfiStr{};
+static jsi::Object jsiToObject(jsi::Runtime &rt, jsi::Value &value,
+                               const char *name, const std::string &type) {
+  if (!value.isObject())
+    throw jsi::JSError(rt, errorPrefix + name + errorInfix + type);
+
+  return value.asObject(rt);
+}
+
+static double jsiToNumber(jsi::Runtime &rt, jsi::Value &value,
+                          const char *name, const std::string &type) {
+  if (!value.isNumber())
+    throw jsi::JSError(rt, errorPrefix + name + errorInfix + type);
+
+  return value.asNumber();
+}
+
+FfiList_FfiStr StrList::ffi() {
+  pointers.clear();
+  for (auto &string : strings) {
+    pointers.push_back(string.c_str());
   }
+  return FfiList_FfiStr{.count = pointers.size(), .data = pointers.data()};
+}
 
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "Array<string>");
+FfiList_ObjectHandle ObjectHandleList::ffi() {
+  return FfiList_ObjectHandle{.count = handles.size(), .data = handles.data()};
+}
+
+FfiList_i32 I32List::ffi() {
+  return FfiList_i32{.count = values.size(), .data = values.data()};
+}
+
+FfiList_FfiCredentialEntry CredentialEntryList::ffi() {
+  return FfiList_FfiCredentialEntry{.count = entries.size(),
+                                    .data = entries.data()};
+}
+
+FfiList_FfiCredentialProve CredentialProveList::ffi() {
+  for (size_t i = 0; i < proves.size(); i++) {
+    proves[i].referent = referents[i].c_str();
+  }
+  return FfiList_FfiCredentialProve{.count = proves.size(),
+                                    .data = proves.data()};
+}
+
+FfiList_FfiNonrevokedIntervalOverride NonrevokedIntervalOverrideList::ffi() {
+  for (size_t i = 0; i < overrides.size(); i++) {
+    overrides[i].rev_reg_def_id = revocationRegistryDefinitionIds[i].c_str();
+  }
+  return FfiList_FfiNonrevokedIntervalOverride{.count = overrides.size(),
+                                               .data = overrides.data()};
+}
+
+ByteBuffer Json::ffi() {
+  return ByteBuffer{.len = static_cast<int64_t>(json.size()),
+                    .data = reinterpret_cast<uint8_t *>(json.data())};
 }
 
 template <>
-FfiList_i32 jsiToValue<FfiList_i32>(jsi::Runtime &rt, jsi::Object &options,
-                                    const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
+StrList jsiToValue<StrList>(jsi::Runtime &rt, jsi::Object &options,
+                            const char *name, bool optional) {
+  StrList list;
+  for (auto &element : jsiToArray(rt, options, name, optional, "Array<string>")) {
+    if (!element.isString())
+      throw jsi::JSError(rt, errorPrefix + name + errorInfix + "Array<string>");
 
-  if (value.isObject() && value.asObject(rt).isArray(rt)) {
-    auto arr = value.asObject(rt).asArray(rt);
-    auto len = arr.length(rt);
-
-    auto num = new int32_t[arrayMaxSize];
-
-    // TODO: error Handling
-    for (int i = 0; i < len; i++) {
-      auto element = arr.getValueAtIndex(rt, i);
-      auto valueAsNumber = element.asNumber();
-
-      num[i] = *new int32_t[sizeof(valueAsNumber)];
-      num[i] = int32_t(valueAsNumber);
-    }
-
-    return FfiList_i32{.count = len, .data = num};
+    list.strings.push_back(element.asString(rt).utf8(rt));
   }
+  return list;
+}
 
-  if (optional)
-    return FfiList_i32{};
+template <>
+ObjectHandleList jsiToValue<ObjectHandleList>(jsi::Runtime &rt,
+                                              jsi::Object &options,
+                                              const char *name, bool optional) {
+  ObjectHandleList list;
+  for (auto &element :
+       jsiToArray(rt, options, name, optional, "Array<ObjectHandle.handle>")) {
+    list.handles.push_back(ObjectHandle(
+        jsiToNumber(rt, element, name, "Array<ObjectHandle.handle>")));
+  }
+  return list;
+}
 
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "Array<number>");
+template <>
+I32List jsiToValue<I32List>(jsi::Runtime &rt, jsi::Object &options,
+                            const char *name, bool optional) {
+  I32List list;
+  for (auto &element : jsiToArray(rt, options, name, optional, "Array<number>")) {
+    list.values.push_back(
+        int32_t(jsiToNumber(rt, element, name, "Array<number>")));
+  }
+  return list;
+}
+
+template <>
+CredentialEntryList
+jsiToValue<CredentialEntryList>(jsi::Runtime &rt, jsi::Object &options,
+                                const char *name, bool optional) {
+  CredentialEntryList list;
+  for (auto &element :
+       jsiToArray(rt, options, name, optional, "Array<CredentialEntry>")) {
+    auto entry = jsiToObject(rt, element, name, "Array<CredentialEntry>");
+
+    FfiCredentialEntry ffiEntry;
+    ffiEntry.credential = jsiToValue<ObjectHandle>(rt, entry, "credential");
+    ffiEntry.timestamp = jsiToValue<int32_t>(rt, entry, "timestamp", true);
+    ffiEntry.rev_state =
+        jsiToValue<ObjectHandle>(rt, entry, "revocationState", true);
+    list.entries.push_back(ffiEntry);
+  }
+  return list;
+}
+
+template <>
+CredentialProveList
+jsiToValue<CredentialProveList>(jsi::Runtime &rt, jsi::Object &options,
+                                const char *name, bool optional) {
+  CredentialProveList list;
+  for (auto &element :
+       jsiToArray(rt, options, name, optional, "Array<CredentialProve>")) {
+    auto prove = jsiToObject(rt, element, name, "Array<CredentialProve>");
+
+    // The referent pointer is set in ffi(), once the strings don't move anymore
+    FfiCredentialProve ffiProve;
+    ffiProve.entry_idx = jsiToValue<int64_t>(rt, prove, "entryIndex");
+    ffiProve.referent = nullptr;
+    ffiProve.is_predicate = jsiToValue<int8_t>(rt, prove, "isPredicate");
+    ffiProve.reveal = jsiToValue<int8_t>(rt, prove, "reveal");
+    list.referents.push_back(jsiToValue<std::string>(rt, prove, "referent"));
+    list.proves.push_back(ffiProve);
+  }
+  return list;
+}
+
+template <>
+NonrevokedIntervalOverrideList
+jsiToValue<NonrevokedIntervalOverrideList>(jsi::Runtime &rt,
+                                           jsi::Object &options,
+                                           const char *name, bool optional) {
+  NonrevokedIntervalOverrideList list;
+  for (auto &element : jsiToArray(rt, options, name, optional,
+                                  "Array<NonRevokedIntervalOverride>")) {
+    auto intervalOverride = jsiToObject(rt, element, name,
+                                "Array<NonRevokedIntervalOverride>");
+
+    // The id pointer is set in ffi(), once the strings don't move anymore
+    FfiNonrevokedIntervalOverride ffiOverride;
+    ffiOverride.rev_reg_def_id = nullptr;
+    ffiOverride.requested_from_ts =
+        jsiToValue<int32_t>(rt, intervalOverride, "requestedFromTimestamp");
+    ffiOverride.override_rev_status_list_ts =
+        jsiToValue<int32_t>(rt, intervalOverride, "overrideRevocationStatusListTimestamp");
+    list.revocationRegistryDefinitionIds.push_back(
+        jsiToValue<std::string>(rt, intervalOverride, "revocationRegistryDefinitionId"));
+    list.overrides.push_back(ffiOverride);
+  }
+  return list;
+}
+
+template <>
+Json jsiToValue<Json>(jsi::Runtime &rt, jsi::Object &options, const char *name,
+                      bool optional) {
+  return Json{.json = jsiToValue<std::string>(rt, options, name, optional)};
 }
 
 template <>
@@ -538,103 +516,5 @@ FfiCredRevInfo jsiToValue(jsi::Runtime &rt, jsi::Object &options,
                              "CredentialRevocationConfig");
 };
 
-template <>
-FfiNonrevokedIntervalOverride jsiToValue(jsi::Runtime &rt, jsi::Object &options,
-                                         const char *name, bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-  if ((value.isNull() || value.isUndefined()) && optional)
-    return FfiNonrevokedIntervalOverride{};
-
-  if (value.isObject()) {
-    jsi::Object valueAsObject = value.asObject(rt);
-    auto requestedFromTimestamp =
-        jsiToValue<int32_t>(rt, valueAsObject, "requestedFromTimestamp");
-    auto overrideRevocationStatusListTimestamp = jsiToValue<int32_t>(
-        rt, valueAsObject, "overrideRevocationStatusListTimestamp");
-    auto revocationRegistryDefinitionId = jsiToValue<std::string>(
-        rt, valueAsObject, "revocationRegistryDefinitionId");
-
-    return FfiNonrevokedIntervalOverride{
-        .rev_reg_def_id = revocationRegistryDefinitionId.c_str(),
-        .requested_from_ts = requestedFromTimestamp,
-        .override_rev_status_list_ts = overrideRevocationStatusListTimestamp};
-  }
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix +
-                             "NonrevokedIntervalOverride");
-};
-
-template <>
-FfiList_FfiNonrevokedIntervalOverride
-jsiToValue<FfiList_FfiNonrevokedIntervalOverride>(jsi::Runtime &rt,
-                                                  jsi::Object &options,
-                                                  const char *name,
-                                                  bool optional) {
-  jsi::Value value = options.getProperty(rt, name);
-
-  if (value.isObject() && value.asObject(rt).isArray(rt)) {
-    auto arr = value.asObject(rt).asArray(rt);
-    auto len = arr.length(rt);
-
-    auto nonRevokedInterValOverrides =
-        new FfiNonrevokedIntervalOverride[arrayMaxSize];
-
-    // TODO: error Handling
-    for (int i = 0; i < len; i++) {
-      auto element = arr.getValueAtIndex(rt, i);
-      auto valueAsObject = element.asObject(rt);
-
-      auto requestedFromTimestamp =
-          jsiToValue<int32_t>(rt, valueAsObject, "requestedFromTimestamp");
-      auto overrideRevocationStatusListTimestamp = jsiToValue<int32_t>(
-          rt, valueAsObject, "overrideRevocationStatusListTimestamp");
-      auto revocationRegistryDefinitionId = jsiToValue<std::string>(
-          rt, valueAsObject, "revocationRegistryDefinitionId");
-
-      nonRevokedInterValOverrides[i] =
-          *new FfiNonrevokedIntervalOverride[sizeof(
-              FfiNonrevokedIntervalOverride)];
-      nonRevokedInterValOverrides[i] = FfiNonrevokedIntervalOverride{
-          .rev_reg_def_id = revocationRegistryDefinitionId.c_str(),
-          .requested_from_ts = requestedFromTimestamp,
-          .override_rev_status_list_ts = overrideRevocationStatusListTimestamp};
-    }
-
-    return FfiList_FfiNonrevokedIntervalOverride{
-        .count = len, .data = nonRevokedInterValOverrides};
-  }
-
-  if (optional)
-    return FfiList_FfiNonrevokedIntervalOverride{};
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix +
-                             "Array<NonRevokedIntervalOverride>");
-}
-
-template <>
-ByteBuffer jsiToValue<ByteBuffer>(jsi::Runtime &rt, jsi::Object &options,
-                                  const char *name, bool optional) {
-  ByteBuffer buffer;
-  
-  if (optional && !options.hasProperty(rt, name)) {
-    buffer.data = nullptr;
-    buffer.len = 0;
-    return buffer;
-  }
-
-  auto value = options.getProperty(rt, name);
-  if (value.isString()) {
-    std::string str = value.asString(rt).utf8(rt);
-    size_t len = str.size();
-    uint8_t *c = new uint8_t[len + 1];
-    std::copy(str.begin(), str.end(), c);
-    c[len] = '\0';
-    buffer.data = c;
-    buffer.len = len;
-    return buffer;
-  }
-
-  throw jsi::JSError(rt, errorPrefix + name + errorInfix + "string");
-}
 
 } // namespace anoncredsTurboModuleUtility

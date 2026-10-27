@@ -63,7 +63,7 @@ export class CredentialRevocationState extends AnoncredsObject {
   }
 
   public update(options: UpdateRevocationStateOptions) {
-    this.handle = NativeAnoncreds.instance.createOrUpdateRevocationState({
+    const updatedRevocationState = NativeAnoncreds.instance.createOrUpdateRevocationState({
       revocationRegistryDefinition: options.revocationRegistryDefinition.handle,
       revocationStatusList: options.revocationStatusList.handle,
       revocationRegistryIndex: options.revocationRegistryIndex,
@@ -71,5 +71,9 @@ export class CredentialRevocationState extends AnoncredsObject {
       oldRevocationStatusList: options.oldRevocationStatusList.handle,
       oldRevocationState: options.oldRevocationState.handle,
     })
+
+    // We can discard previous handle and store the new one
+    this.handle.clear()
+    this.handle = updatedRevocationState
   }
 }

@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import koffi from 'koffi'
+import { setFreeAnoncredsString } from '../ffi'
 import { nativeBindings } from './bindings'
 import type { NativeMethods } from './NativeBindingInterface'
 
@@ -78,6 +79,7 @@ const getLibrary = () => {
   for (const [name, [returnType, argumentTypes]] of Object.entries(nativeBindings)) {
     methods[name as keyof NativeMethods] = lib.func(name, returnType, argumentTypes)
   }
+  setFreeAnoncredsString((pointer) => methods.anoncreds_string_free?.(pointer))
 
   return methods as NativeMethods
 }
