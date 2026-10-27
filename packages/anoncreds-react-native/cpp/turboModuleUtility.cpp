@@ -338,7 +338,7 @@ static double jsiToNumber(jsi::Runtime &rt, jsi::Value &value,
   return value.asNumber();
 }
 
-FfiList_FfiStr StrList::ffi() {
+FfiList_FfiStr StrList::ffi() & {
   pointers.clear();
   for (auto &string : strings) {
     pointers.push_back(string.c_str());
@@ -346,20 +346,20 @@ FfiList_FfiStr StrList::ffi() {
   return FfiList_FfiStr{.count = pointers.size(), .data = pointers.data()};
 }
 
-FfiList_ObjectHandle ObjectHandleList::ffi() {
+FfiList_ObjectHandle ObjectHandleList::ffi() & {
   return FfiList_ObjectHandle{.count = handles.size(), .data = handles.data()};
 }
 
-FfiList_i32 I32List::ffi() {
+FfiList_i32 I32List::ffi() & {
   return FfiList_i32{.count = values.size(), .data = values.data()};
 }
 
-FfiList_FfiCredentialEntry CredentialEntryList::ffi() {
+FfiList_FfiCredentialEntry CredentialEntryList::ffi() & {
   return FfiList_FfiCredentialEntry{.count = entries.size(),
                                     .data = entries.data()};
 }
 
-FfiList_FfiCredentialProve CredentialProveList::ffi() {
+FfiList_FfiCredentialProve CredentialProveList::ffi() & {
   for (size_t i = 0; i < proves.size(); i++) {
     proves[i].referent = referents[i].c_str();
   }
@@ -367,7 +367,7 @@ FfiList_FfiCredentialProve CredentialProveList::ffi() {
                                     .data = proves.data()};
 }
 
-FfiList_FfiNonrevokedIntervalOverride NonrevokedIntervalOverrideList::ffi() {
+FfiList_FfiNonrevokedIntervalOverride NonrevokedIntervalOverrideList::ffi() & {
   for (size_t i = 0; i < overrides.size(); i++) {
     overrides[i].rev_reg_def_id = revocationRegistryDefinitionIds[i].c_str();
   }
@@ -375,7 +375,7 @@ FfiList_FfiNonrevokedIntervalOverride NonrevokedIntervalOverrideList::ffi() {
                                                .data = overrides.data()};
 }
 
-ByteBuffer Json::ffi() {
+ByteBuffer Json::ffi() & {
   return ByteBuffer{.len = static_cast<int64_t>(json.size()),
                     .data = reinterpret_cast<uint8_t *>(json.data())};
 }

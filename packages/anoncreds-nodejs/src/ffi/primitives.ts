@@ -16,7 +16,11 @@ export const setFreeAnoncredsString = (free: (pointer: unknown) => void) => {
   freeAnoncredsString = free
 }
 export const FFI_ANONCREDS_STRING = koffi.disposable('anoncreds_string', FFI_STRING, (pointer: unknown) => {
-  if (pointer) freeAnoncredsString?.(pointer)
+  if (!pointer) return
+
+  // Fails loudly instead of leaking the string, should a string ever be converted before the library is loaded
+  if (!freeAnoncredsString) throw new Error('Cannot free an AnonCreds string before the AnonCreds library is loaded')
+  freeAnoncredsString(pointer)
 })
 
 export const FFI_OBJECT_HANDLE = FFI_USIZE
