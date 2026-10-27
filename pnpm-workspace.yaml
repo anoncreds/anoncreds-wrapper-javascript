@@ -11,7 +11,7 @@ catalog:
   '@biomejs/biome': 2.6.2
   '@changesets/cli': ^3.0.3
   '@types/node': ^22.20.5
-  koffi: ^3.3.3
+  koffi: ^3.3.4
   react: 19.3.0
   react-native: 0.88.0
   rimraf: ^6.1.3
