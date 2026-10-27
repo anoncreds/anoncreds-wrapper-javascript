@@ -44,6 +44,7 @@ describe('arguments and return values', () => {
     })
 
     expect(credential.schemaId).toBe(schemaId)
+    expect(credential.toJson().values).toMatchObject({ name: { raw: 'Zoë' } })
 
     free(
       schema,
