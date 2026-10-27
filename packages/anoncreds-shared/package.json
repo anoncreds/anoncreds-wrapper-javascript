@@ -12,19 +12,28 @@
   },
   "publishConfig": {
     "access": "public",
-    "main": "build/index"
+    "main": "./build/index.mjs",
+    "types": "./build/index.d.mts",
+    "exports": {
+      ".": {
+        "types": "./build/index.d.mts",
+        "default": "./build/index.mjs"
+      },
+      "./installBinary": "./installBinary.js",
+      "./package.json": "./package.json"
+    }
   },
   "files": [
     "build",
     "installBinary.js"
   ],
   "scripts": {
-    "check-types": "pnpm compile --noEmit",
-    "build": "pnpm clean && pnpm compile",
-    "clean": "rimraf -rf ./build",
-    "compile": "tsc -p ./tsconfig.build.json"
+    "check-types": "tsc -p ./tsconfig.build.json --noEmit",
+    "build": "tsdown",
+    "clean": "rimraf -rf ./build"
   },
   "devDependencies": {
+    "tsdown": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {
