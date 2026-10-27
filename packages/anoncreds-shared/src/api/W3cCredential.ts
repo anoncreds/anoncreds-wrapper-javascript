@@ -10,7 +10,6 @@ import { CredentialRequest } from './CredentialRequest'
 import { CredentialRequestMetadata } from './CredentialRequestMetadata'
 import type { CredentialRevocationConfig } from './CredentialRevocationConfig'
 import { RevocationRegistryDefinition } from './RevocationRegistryDefinition'
-import type { RevocationStatusList } from './RevocationStatusList'
 import { pushToArray } from './utils'
 
 export type CreateW3cCredentialOptions = {
@@ -19,9 +18,7 @@ export type CreateW3cCredentialOptions = {
   credentialOffer: CredentialOffer | JsonObject
   credentialRequest: CredentialRequest | JsonObject
   attributeRawValues: Record<string, string>
-  revocationRegistryId?: string
   revocationConfiguration?: CredentialRevocationConfig
-  revocationStatusList?: RevocationStatusList | JsonObject
   w3cVersion?: string
 }
 
@@ -39,8 +36,6 @@ export type W3cCredentialFromLegacyOptions = {
 }
 
 export class W3cCredential extends AnoncredsObject {
-  private proofDetails?: ObjectHandle
-
   public static create(options: CreateW3cCredentialOptions) {
     let credential: ObjectHandle
     // Objects created within this method must be freed up
@@ -131,47 +126,36 @@ export class W3cCredential extends AnoncredsObject {
     return this
   }
 
-  private getProofDetails(): ObjectHandle {
-    if (!this.proofDetails) {
-      this.proofDetails = NativeAnoncreds.instance.w3cCredentialGetIntegrityProofDetails({ objectHandle: this.handle })
+  private getProofAttribute(name: string) {
+    // The proof details are a separate native object, freed right after reading the attribute
+    const proofDetails = NativeAnoncreds.instance.w3cCredentialGetIntegrityProofDetails({ objectHandle: this.handle })
+    try {
+      return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name })
+    } finally {
+      proofDetails.clear()
     }
-    return this.proofDetails
   }
 
   public get schemaId() {
-    const proofDetails = this.getProofDetails()
-    return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'schema_id' })
+    return this.getProofAttribute('schema_id')
   }
 
   public get credentialDefinitionId() {
-    const proofDetails = this.getProofDetails()
-    return NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'cred_def_id' })
+    return this.getProofAttribute('cred_def_id')
   }
 
   public get revocationRegistryId() {
-    const proofDetails = this.getProofDetails()
-    return (
-      NativeAnoncreds.instance.w3cCredentialProofGetAttribute({ objectHandle: proofDetails, name: 'rev_reg_id' }) ??
-      undefined
-    )
+    return this.getProofAttribute('rev_reg_id') ?? undefined
   }
 
   public get revocationRegistryIndex() {
-    const proofDetails = this.getProofDetails()
-    const index = NativeAnoncreds.instance.w3cCredentialProofGetAttribute({
-      objectHandle: proofDetails,
-      name: 'rev_reg_index',
-    })
+    const index = this.getProofAttribute('rev_reg_index')
     return index ? Number(index) : undefined
   }
 
   public get timestamp() {
-    const proofDetails = this.getProofDetails()
-    const index = NativeAnoncreds.instance.w3cCredentialProofGetAttribute({
-      objectHandle: proofDetails,
-      name: 'timestamp',
-    })
-    return index ? Number(index) : undefined
+    const timestamp = this.getProofAttribute('timestamp')
+    return timestamp ? Number(timestamp) : undefined
   }
 
   public toLegacy(): Credential {

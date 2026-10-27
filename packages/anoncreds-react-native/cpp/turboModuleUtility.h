@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <ReactCommon/CallInvoker.h>
 #include <jsi/jsi.h>
 
@@ -9,7 +12,6 @@
 using namespace facebook;
 
 namespace anoncredsTurboModuleUtility {
-static const int32_t arrayMaxSize = 255;
 static const std::string errorPrefix = "Value `";
 static const std::string errorInfix = "` is not of type ";
 
@@ -20,6 +22,51 @@ struct State {
 
   State(jsi::Function *cb_) : cb(std::move(*cb_)) {}
 };
+
+// Arguments that AnonCreds reads through pointers. Each owns the memory that
+// its `ffi()` value points to and frees it when it goes out of scope, also when
+// reading a later argument throws. Call `ffi()` in the AnonCreds call itself, on
+// a named argument: the `&` makes calling it on a temporary a compile error.
+struct StrList {
+  std::vector<std::string> strings;
+  std::vector<FfiStr> pointers;
+  FfiList_FfiStr ffi() &;
+};
+
+struct ObjectHandleList {
+  std::vector<ObjectHandle> handles;
+  FfiList_ObjectHandle ffi() &;
+};
+
+struct I32List {
+  std::vector<int32_t> values;
+  FfiList_i32 ffi() &;
+};
+
+struct CredentialEntryList {
+  std::vector<FfiCredentialEntry> entries;
+  FfiList_FfiCredentialEntry ffi() &;
+};
+
+struct CredentialProveList {
+  std::vector<std::string> referents;
+  std::vector<FfiCredentialProve> proves;
+  FfiList_FfiCredentialProve ffi() &;
+};
+
+struct NonrevokedIntervalOverrideList {
+  std::vector<std::string> revocationRegistryDefinitionIds;
+  std::vector<FfiNonrevokedIntervalOverride> overrides;
+  FfiList_FfiNonrevokedIntervalOverride ffi() &;
+};
+
+struct Json {
+  std::string json;
+  ByteBuffer ffi() &;
+};
+
+// Converts a string that AnonCreds allocated to a JS string, and frees it
+jsi::Value anoncredsStringToValue(jsi::Runtime &rt, const char *value);
 
 // Install the Turbomodule
 void registerTurboModule(jsi::Runtime &rt,

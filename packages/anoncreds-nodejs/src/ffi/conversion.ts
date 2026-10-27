@@ -1,6 +1,5 @@
 import type { ObjectHandle } from '@hyperledger/anoncreds-shared'
 import koffi from 'koffi'
-import { FFI_UINT8 } from './primitives'
 
 export const stringListToStringListStruct = (stringList: Array<string>) => {
   return {
@@ -9,16 +8,10 @@ export const stringListToStringListStruct = (stringList: Array<string>) => {
   }
 }
 
-export const byteBufferToUint8Array = (byteBuffer: { data: Uint8Array; len: number }): Uint8Array => {
-  const { data, len } = byteBuffer
-
-  if (data instanceof Uint8Array) {
-    return data.slice(0, len)
-  }
-
-  const decoded: Uint8Array = koffi.decode(data, FFI_UINT8, len)
-  return decoded
-}
+// Reads a UTF-8 byte buffer that AnonCreds allocated as a string. koffi.decode(data, type, len) would make a new array
+// type on every call, which koffi never frees
+export const byteBufferToString = (byteBuffer: { data: unknown; len: number }): string =>
+  koffi.decode.string(byteBuffer.data, byteBuffer.len)
 
 export const objectHandleListToObjectHandleListStruct = (objectHandleList: Array<ObjectHandle>) => {
   return {

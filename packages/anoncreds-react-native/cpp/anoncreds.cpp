@@ -8,15 +8,15 @@ namespace anoncreds {
 // ===== GENERAL =====
 
 jsi::Value version(jsi::Runtime &rt, jsi::Object options) {
-  return jsi::String::createFromAscii(rt, anoncreds_version());
+  return anoncredsStringToValue(rt, anoncreds_version());
 };
 
 jsi::Value getCurrentError(jsi::Runtime &rt, jsi::Object options) {
-  const char *out;
+  const char *out = nullptr;
 
   anoncreds_get_current_error(&out);
 
-  return jsi::String::createFromAscii(rt, out);
+  return anoncredsStringToValue(rt, out);
 };
 
 jsi::Value getJson(jsi::Runtime &rt, jsi::Object options) {
@@ -32,7 +32,7 @@ jsi::Value getJson(jsi::Runtime &rt, jsi::Object options) {
 jsi::Value getTypeName(jsi::Runtime &rt, jsi::Object options) {
   auto handle = jsiToValue<ObjectHandle>(rt, options, "objectHandle");
 
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code = anoncreds_object_get_type_name(handle, &out);
 
@@ -55,7 +55,7 @@ jsi::Value objectFree(jsi::Runtime &rt, jsi::Object options) {
 // ===== META =====
 
 jsi::Value createLinkSecret(jsi::Runtime &rt, jsi::Object options) {
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code = anoncreds_create_link_secret(&out);
 
@@ -63,7 +63,7 @@ jsi::Value createLinkSecret(jsi::Runtime &rt, jsi::Object options) {
 };
 
 jsi::Value generateNonce(jsi::Runtime &rt, jsi::Object options) {
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code = anoncreds_generate_nonce(&out);
 
@@ -76,12 +76,12 @@ jsi::Value createSchema(jsi::Runtime &rt, jsi::Object options) {
   auto name = jsiToValue<std::string>(rt, options, "name");
   auto version = jsiToValue<std::string>(rt, options, "version");
   auto issuerId = jsiToValue<std::string>(rt, options, "issuerId");
-  auto attributeNames = jsiToValue<FfiStrList>(rt, options, "attributeNames");
+  auto attributeNames = jsiToValue<StrList>(rt, options, "attributeNames");
 
   ObjectHandle out;
 
   ErrorCode code = anoncreds_create_schema(
-      name.c_str(), version.c_str(), issuerId.c_str(), attributeNames, &out);
+      name.c_str(), version.c_str(), issuerId.c_str(), attributeNames.ffi(), &out);
 
   return createReturnValue(rt, code, &out);
 };
@@ -106,231 +106,174 @@ jsi::Value createCredentialDefinition(jsi::Runtime &rt, jsi::Object options) {
 
 // ===== AnonCreds Objects from JSON =====
 
-ByteBuffer stringToByteBuffer(std::string str) {
-  ByteBuffer b;
-  size_t len = str.size();
-  uint8_t *c = new uint8_t[len + 1];
-  std::copy(str.begin(), str.end(), c);
-  c[len] = '\0';
-  b.data = c;
-  b.len = len;
-
-  return b;
-}
-
 jsi::Value revocationRegistryDefinitionFromJson(jsi::Runtime &rt,
                                                 jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_revocation_registry_definition_from_json(json, &out);
+  ErrorCode code = anoncreds_revocation_registry_definition_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value revocationRegistryFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_revocation_registry_from_json(json, &out);
+  ErrorCode code = anoncreds_revocation_registry_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value revocationStatusListFromJson(jsi::Runtime &rt,
                                                 jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_revocation_status_list_from_json(json, &out);
+  ErrorCode code = anoncreds_revocation_status_list_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 
 jsi::Value presentationFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_presentation_from_json(json, &out);
+  ErrorCode code = anoncreds_presentation_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value presentationRequestFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_presentation_request_from_json(json, &out);
+  ErrorCode code = anoncreds_presentation_request_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value credentialOfferFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_credential_offer_from_json(json, &out);
+  ErrorCode code = anoncreds_credential_offer_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value schemaFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_schema_from_json(json, &out);
+  ErrorCode code = anoncreds_schema_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value credentialRequestFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_credential_request_from_json(json, &out);
+  ErrorCode code = anoncreds_credential_request_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value credentialRequestMetadataFromJson(jsi::Runtime &rt,
                                              jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_credential_request_metadata_from_json(json, &out);
+  ErrorCode code = anoncreds_credential_request_metadata_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value credentialFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_credential_from_json(json, &out);
+  ErrorCode code = anoncreds_credential_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value revocationRegistryDefinitionPrivateFromJson(jsi::Runtime &rt,
                                                        jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
   ErrorCode code =
-      anoncreds_revocation_registry_definition_private_from_json(json, &out);
+      anoncreds_revocation_registry_definition_private_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value revocationStateFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_revocation_state_from_json(json, &out);
+  ErrorCode code = anoncreds_revocation_state_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value credentialDefinitionFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_credential_definition_from_json(json, &out);
+  ErrorCode code = anoncreds_credential_definition_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value credentialDefinitionPrivateFromJson(jsi::Runtime &rt,
                                                jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_credential_definition_private_from_json(json, &out);
+  ErrorCode code = anoncreds_credential_definition_private_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value keyCorrectnessProofFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_key_correctness_proof_from_json(json, &out);
+  ErrorCode code = anoncreds_key_correctness_proof_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
@@ -341,49 +284,29 @@ jsi::Value createPresentation(jsi::Runtime &rt, jsi::Object options) {
   auto presentationRequest =
       jsiToValue<ObjectHandle>(rt, options, "presentationRequest");
   auto credentials =
-      jsiToValue<FfiList_FfiCredentialEntry>(rt, options, "credentials");
+      jsiToValue<CredentialEntryList>(rt, options, "credentials");
   auto credentialsProve =
-      jsiToValue<FfiList_FfiCredentialProve>(rt, options, "credentialsProve");
+      jsiToValue<CredentialProveList>(rt, options, "credentialsProve");
   auto selfAttestedNames =
-      jsiToValue<FfiStrList>(rt, options, "selfAttestNames");
+      jsiToValue<StrList>(rt, options, "selfAttestNames");
   auto selfAttestedValues =
-      jsiToValue<FfiStrList>(rt, options, "selfAttestValues");
+      jsiToValue<StrList>(rt, options, "selfAttestValues");
   auto linkSecret = jsiToValue<std::string>(rt, options, "linkSecret");
-  auto schemas = jsiToValue<FfiList_ObjectHandle>(rt, options, "schemas");
-  auto schemaIds = jsiToValue<FfiList_FfiStr>(rt, options, "schemaIds");
+  auto schemas = jsiToValue<ObjectHandleList>(rt, options, "schemas");
+  auto schemaIds = jsiToValue<StrList>(rt, options, "schemaIds");
   auto credentialDefinitions =
-      jsiToValue<FfiList_ObjectHandle>(rt, options, "credentialDefinitions");
+      jsiToValue<ObjectHandleList>(rt, options, "credentialDefinitions");
   auto credentialDefinitionIds =
-      jsiToValue<FfiList_FfiStr>(rt, options, "credentialDefinitionIds");
+      jsiToValue<StrList>(rt, options, "credentialDefinitionIds");
 
   ObjectHandle out;
 
   ErrorCode code = anoncreds_create_presentation(
-      presentationRequest, credentials, credentialsProve, selfAttestedNames,
-      selfAttestedValues, linkSecret.c_str(), schemas, schemaIds,
-      credentialDefinitions, credentialDefinitionIds, &out);
+      presentationRequest, credentials.ffi(), credentialsProve.ffi(), selfAttestedNames.ffi(),
+      selfAttestedValues.ffi(), linkSecret.c_str(), schemas.ffi(), schemaIds.ffi(),
+      credentialDefinitions.ffi(), credentialDefinitionIds.ffi(), &out);
 
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] credentials.data;
-  for (int i = 0; i < credentialsProve.count; i++) {
-    delete[] credentialsProve.data[i].referent;
-  }
-  for (int i = 0; i < schemaIds.count; i++) {
-    delete[] schemaIds.data[i];
-  }
-  delete[] schemas.data;
-  for (int i = 0; i < credentialDefinitionIds.count; i++) {
-    delete[] credentialDefinitionIds.data[i];
-  }
-  delete[] credentialDefinitions.data;
-  for (int i = 0; i < selfAttestedNames.count; i++) {
-    delete[] selfAttestedNames.data[i];
-  }
-  for (int i = 0; i < selfAttestedValues.count; i++) {
-    delete[] selfAttestedValues.data[i];
-  }
 
   return returnValue;
 };
@@ -392,41 +315,31 @@ jsi::Value verifyPresentation(jsi::Runtime &rt, jsi::Object options) {
   auto presentation = jsiToValue<ObjectHandle>(rt, options, "presentation");
   auto presentationRequest =
       jsiToValue<ObjectHandle>(rt, options, "presentationRequest");
-  auto schemas = jsiToValue<FfiList_ObjectHandle>(rt, options, "schemas");
-  auto schemaIds = jsiToValue<FfiList_FfiStr>(rt, options, "schemaIds");
+  auto schemas = jsiToValue<ObjectHandleList>(rt, options, "schemas");
+  auto schemaIds = jsiToValue<StrList>(rt, options, "schemaIds");
   auto credentialDefinitions =
-      jsiToValue<FfiList_ObjectHandle>(rt, options, "credentialDefinitions");
+      jsiToValue<ObjectHandleList>(rt, options, "credentialDefinitions");
   auto credentialDefinitionIds =
-      jsiToValue<FfiList_FfiStr>(rt, options, "credentialDefinitionIds");
-  auto revocationRegistryDefinitions = jsiToValue<FfiList_ObjectHandle>(
+      jsiToValue<StrList>(rt, options, "credentialDefinitionIds");
+  auto revocationRegistryDefinitions = jsiToValue<ObjectHandleList>(
       rt, options, "revocationRegistryDefinitions", true);
-  auto revocationRegistryDefinitionIds = jsiToValue<FfiList_FfiStr>(
+  auto revocationRegistryDefinitionIds = jsiToValue<StrList>(
       rt, options, "revocationRegistryDefinitionIds", true);
-  auto revocationStatusLists = jsiToValue<FfiList_ObjectHandle>(
+  auto revocationStatusLists = jsiToValue<ObjectHandleList>(
       rt, options, "revocationStatusLists", true);
   auto nonRevokedIntervalOverrides =
-      jsiToValue<FfiList_FfiNonrevokedIntervalOverride>(
+      jsiToValue<NonrevokedIntervalOverrideList>(
           rt, options, "nonRevokedIntervalOverrides", true);
 
   int8_t out;
 
   ErrorCode code = anoncreds_verify_presentation(
-      presentation, presentationRequest, schemas, schemaIds,
-      credentialDefinitions, credentialDefinitionIds,
-      revocationRegistryDefinitions, revocationRegistryDefinitionIds,
-      revocationStatusLists, nonRevokedIntervalOverrides, &out);
+      presentation, presentationRequest, schemas.ffi(), schemaIds.ffi(),
+      credentialDefinitions.ffi(), credentialDefinitionIds.ffi(),
+      revocationRegistryDefinitions.ffi(), revocationRegistryDefinitionIds.ffi(),
+      revocationStatusLists.ffi(), nonRevokedIntervalOverrides.ffi(), &out);
 
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  for (int i = 0; i < schemaIds.count; i++) {
-    delete[] schemaIds.data[i];
-  }
-  delete[] schemas.data;
-  for (int i = 0; i < credentialDefinitionIds.count; i++) {
-    delete[] credentialDefinitionIds.data[i];
-  }
-  delete[] credentialDefinitions.data;
 
   return returnValue;
 };
@@ -442,11 +355,11 @@ jsi::Value createCredential(jsi::Runtime &rt, jsi::Object options) {
       jsiToValue<ObjectHandle>(rt, options, "credentialOffer");
   auto credentialRequest =
       jsiToValue<ObjectHandle>(rt, options, "credentialRequest");
-  auto attributeNames = jsiToValue<FfiStrList>(rt, options, "attributeNames");
+  auto attributeNames = jsiToValue<StrList>(rt, options, "attributeNames");
   auto attributeRawValues =
-      jsiToValue<FfiStrList>(rt, options, "attributeRawValues");
+      jsiToValue<StrList>(rt, options, "attributeRawValues");
   auto attributeEncodedValues =
-      jsiToValue<FfiStrList>(rt, options, "attributeEncodedValues", true);
+      jsiToValue<StrList>(rt, options, "attributeEncodedValues", true);
   auto revocation =
       jsiToValue<FfiCredRevInfo>(rt, options, "revocationConfiguration", true);
 
@@ -454,8 +367,8 @@ jsi::Value createCredential(jsi::Runtime &rt, jsi::Object options) {
 
   ErrorCode code = anoncreds_create_credential(
       credentialDefinition, credentialDefinitionPrivate, credentialOffer,
-      credentialRequest, attributeNames, attributeRawValues,
-      attributeEncodedValues, revocation.reg_def ? &revocation : 0, &out);
+      credentialRequest, attributeNames.ffi(), attributeRawValues.ffi(),
+      attributeEncodedValues.ffi(), revocation.reg_def ? &revocation : 0, &out);
 
   return createReturnValue(rt, code, &out);
 };
@@ -501,7 +414,7 @@ jsi::Value credentialGetAttribute(jsi::Runtime &rt, jsi::Object options) {
   auto handle = jsiToValue<ObjectHandle>(rt, options, "objectHandle");
   auto name = jsiToValue<std::string>(rt, options, "name");
 
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code =
       anoncreds_credential_get_attribute(handle, name.c_str(), &out);
@@ -511,12 +424,12 @@ jsi::Value credentialGetAttribute(jsi::Runtime &rt, jsi::Object options) {
 
 jsi::Value encodeCredentialAttributes(jsi::Runtime &rt, jsi::Object options) {
   auto attributeRawValues =
-      jsiToValue<FfiList_FfiStr>(rt, options, "attributeRawValues");
+      jsiToValue<StrList>(rt, options, "attributeRawValues");
 
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code =
-      anoncreds_encode_credential_attributes(attributeRawValues, &out);
+      anoncreds_encode_credential_attributes(attributeRawValues.ffi(), &out);
 
   return createReturnValue(rt, code, &out);
 };
@@ -598,8 +511,8 @@ jsi::Value updateRevocationStatusList(jsi::Runtime &rt, jsi::Object options) {
       jsiToValue<ObjectHandle>(rt, options, "revocationRegistryDefinitionPrivate");      
   auto revocationStatusList =
       jsiToValue<ObjectHandle>(rt, options, "revocationStatusList");
-  auto issued = jsiToValue<FfiList_i32>(rt, options, "issued");
-  auto revoked = jsiToValue<FfiList_i32>(rt, options, "revoked");
+  auto issued = jsiToValue<I32List>(rt, options, "issued");
+  auto revoked = jsiToValue<I32List>(rt, options, "revoked");
   auto timestamp = jsiToValue<int64_t>(rt, options, "timestamp");
 
   ObjectHandle out;
@@ -607,7 +520,7 @@ jsi::Value updateRevocationStatusList(jsi::Runtime &rt, jsi::Object options) {
   ErrorCode code = anoncreds_update_revocation_status_list(
     credentialDefinition, revocationRegistryDefinition, 
     revocationRegistryDefinitionPrivate, revocationStatusList,
-    issued, revoked, timestamp, &out);
+    issued.ffi(), revoked.ffi(), timestamp, &out);
 
   return createReturnValue(rt, code, &out);
 }
@@ -657,7 +570,7 @@ jsi::Value revocationRegistryDefinitionGetAttribute(jsi::Runtime &rt,
   auto handle = jsiToValue<ObjectHandle>(rt, options, "objectHandle");
   auto name = jsiToValue<std::string>(rt, options, "name");
 
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code = anoncreds_revocation_registry_definition_get_attribute(
       handle, name.c_str(), &out);
@@ -666,29 +579,23 @@ jsi::Value revocationRegistryDefinitionGetAttribute(jsi::Runtime &rt,
 };
 
 jsi::Value w3cPresentationFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_w3c_presentation_from_json(json, &out);
+  ErrorCode code = anoncreds_w3c_presentation_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
 
 jsi::Value w3cCredentialFromJson(jsi::Runtime &rt, jsi::Object options) {
-  auto json = jsiToValue<ByteBuffer>(rt, options, "json");
+  auto json = jsiToValue<Json>(rt, options, "json");
 
   ObjectHandle out;
 
-  ErrorCode code = anoncreds_w3c_credential_from_json(json, &out);
+  ErrorCode code = anoncreds_w3c_credential_from_json(json.ffi(), &out);
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] json.data;
 
   return returnValue;
 };
@@ -697,41 +604,27 @@ jsi::Value createW3cPresentation(jsi::Runtime &rt, jsi::Object options) {
   auto presentationRequest =
       jsiToValue<ObjectHandle>(rt, options, "presentationRequest");
   auto credentials =
-      jsiToValue<FfiList_FfiCredentialEntry>(rt, options, "credentials");
+      jsiToValue<CredentialEntryList>(rt, options, "credentials");
   auto credentialsProve =
-      jsiToValue<FfiList_FfiCredentialProve>(rt, options, "credentialsProve");
+      jsiToValue<CredentialProveList>(rt, options, "credentialsProve");
   auto linkSecret = jsiToValue<std::string>(rt, options, "linkSecret");
-  auto schemas = jsiToValue<FfiList_ObjectHandle>(rt, options, "schemas");
-  auto schemaIds = jsiToValue<FfiList_FfiStr>(rt, options, "schemaIds");
+  auto schemas = jsiToValue<ObjectHandleList>(rt, options, "schemas");
+  auto schemaIds = jsiToValue<StrList>(rt, options, "schemaIds");
   auto credentialDefinitions =
-      jsiToValue<FfiList_ObjectHandle>(rt, options, "credentialDefinitions");
+      jsiToValue<ObjectHandleList>(rt, options, "credentialDefinitions");
   auto credentialDefinitionIds =
-      jsiToValue<FfiList_FfiStr>(rt, options, "credentialDefinitionIds");
+      jsiToValue<StrList>(rt, options, "credentialDefinitionIds");
   auto w3cVersion =
       jsiToValue<std::string>(rt, options, "w3cVersion", true);
 
   ObjectHandle out;
 
   ErrorCode code = anoncreds_create_w3c_presentation(
-      presentationRequest, credentials, credentialsProve, linkSecret.c_str(),
-      schemas, schemaIds, credentialDefinitions, credentialDefinitionIds,
+      presentationRequest, credentials.ffi(), credentialsProve.ffi(), linkSecret.c_str(),
+      schemas.ffi(), schemaIds.ffi(), credentialDefinitions.ffi(), credentialDefinitionIds.ffi(),
       w3cVersion.length() ? w3cVersion.c_str() : nullptr, &out);
 
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  delete[] credentials.data;
-  for (int i = 0; i < credentialsProve.count; i++) {
-    delete[] credentialsProve.data[i].referent;
-  }
-  for (int i = 0; i < schemaIds.count; i++) {
-    delete[] schemaIds.data[i];
-  }
-  delete[] schemas.data;
-  for (int i = 0; i < credentialDefinitionIds.count; i++) {
-    delete[] credentialDefinitionIds.data[i];
-  }
-  delete[] credentialDefinitions.data;
 
   return returnValue;
 };
@@ -740,41 +633,31 @@ jsi::Value verifyW3cPresentation(jsi::Runtime &rt, jsi::Object options) {
   auto presentation = jsiToValue<ObjectHandle>(rt, options, "presentation");
   auto presentationRequest =
       jsiToValue<ObjectHandle>(rt, options, "presentationRequest");
-  auto schemas = jsiToValue<FfiList_ObjectHandle>(rt, options, "schemas");
-  auto schemaIds = jsiToValue<FfiList_FfiStr>(rt, options, "schemaIds");
+  auto schemas = jsiToValue<ObjectHandleList>(rt, options, "schemas");
+  auto schemaIds = jsiToValue<StrList>(rt, options, "schemaIds");
   auto credentialDefinitions =
-      jsiToValue<FfiList_ObjectHandle>(rt, options, "credentialDefinitions");
+      jsiToValue<ObjectHandleList>(rt, options, "credentialDefinitions");
   auto credentialDefinitionIds =
-      jsiToValue<FfiList_FfiStr>(rt, options, "credentialDefinitionIds");
-  auto revocationRegistryDefinitions = jsiToValue<FfiList_ObjectHandle>(
+      jsiToValue<StrList>(rt, options, "credentialDefinitionIds");
+  auto revocationRegistryDefinitions = jsiToValue<ObjectHandleList>(
       rt, options, "revocationRegistryDefinitions", true);
-  auto revocationRegistryDefinitionIds = jsiToValue<FfiList_FfiStr>(
+  auto revocationRegistryDefinitionIds = jsiToValue<StrList>(
       rt, options, "revocationRegistryDefinitionIds", true);
-  auto revocationStatusLists = jsiToValue<FfiList_ObjectHandle>(
+  auto revocationStatusLists = jsiToValue<ObjectHandleList>(
       rt, options, "revocationStatusLists", true);
   auto nonRevokedIntervalOverrides =
-      jsiToValue<FfiList_FfiNonrevokedIntervalOverride>(
+      jsiToValue<NonrevokedIntervalOverrideList>(
           rt, options, "nonRevokedIntervalOverrides", true);
 
   int8_t out;
 
   ErrorCode code = anoncreds_verify_w3c_presentation(
-      presentation, presentationRequest, schemas, schemaIds,
-      credentialDefinitions, credentialDefinitionIds,
-      revocationRegistryDefinitions, revocationRegistryDefinitionIds,
-      revocationStatusLists, nonRevokedIntervalOverrides, &out);
+      presentation, presentationRequest, schemas.ffi(), schemaIds.ffi(),
+      credentialDefinitions.ffi(), credentialDefinitionIds.ffi(),
+      revocationRegistryDefinitions.ffi(), revocationRegistryDefinitionIds.ffi(),
+      revocationStatusLists.ffi(), nonRevokedIntervalOverrides.ffi(), &out);
 
   auto returnValue = createReturnValue(rt, code, &out);
-
-  // Free memory
-  for (int i = 0; i < schemaIds.count; i++) {
-    delete[] schemaIds.data[i];
-  }
-  delete[] schemas.data;
-  for (int i = 0; i < credentialDefinitionIds.count; i++) {
-    delete[] credentialDefinitionIds.data[i];
-  }
-  delete[] credentialDefinitions.data;
 
   return returnValue;
 };
@@ -788,9 +671,9 @@ jsi::Value createW3cCredential(jsi::Runtime &rt, jsi::Object options) {
       jsiToValue<ObjectHandle>(rt, options, "credentialOffer");
   auto credentialRequest =
       jsiToValue<ObjectHandle>(rt, options, "credentialRequest");
-  auto attributeNames = jsiToValue<FfiStrList>(rt, options, "attributeNames");
+  auto attributeNames = jsiToValue<StrList>(rt, options, "attributeNames");
   auto attributeRawValues =
-      jsiToValue<FfiStrList>(rt, options, "attributeRawValues");
+      jsiToValue<StrList>(rt, options, "attributeRawValues");
   auto revocation =
       jsiToValue<FfiCredRevInfo>(rt, options, "revocationConfiguration", true);
   auto w3cVersion =
@@ -800,7 +683,7 @@ jsi::Value createW3cCredential(jsi::Runtime &rt, jsi::Object options) {
 
   ErrorCode code = anoncreds_create_w3c_credential(
       credentialDefinition, credentialDefinitionPrivate, credentialOffer,
-      credentialRequest, attributeNames, attributeRawValues,
+      credentialRequest, attributeNames.ffi(), attributeRawValues.ffi(),
       revocation.reg_def ? &revocation : 0,
       w3cVersion.length() ? w3cVersion.c_str() : nullptr, &out);
 
@@ -822,7 +705,7 @@ jsi::Value w3cCredentialProofGetAttribute(jsi::Runtime &rt, jsi::Object options)
   auto handle = jsiToValue<ObjectHandle>(rt, options, "objectHandle");
   auto name = jsiToValue<std::string>(rt, options, "name");
 
-  const char *out;
+  const char *out = nullptr;
 
   ErrorCode code =
       anoncreds_w3c_credential_proof_get_attribute(handle, name.c_str(), &out);

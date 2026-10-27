@@ -4,6 +4,7 @@ import {
   CredentialEntryStructList,
   CredentialProveStructList,
   CredRevInfoStruct,
+  FFI_ANONCREDS_STRING,
   FFI_ERROR_CODE,
   FFI_INT8,
   FFI_INT64,
@@ -21,23 +22,23 @@ type TypeSpec = Parameters<typeof koffi.out>[0]
 
 export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
   // Version and utilities
-  anoncreds_version: [koffi.pointer(FFI_STRING), []],
+  anoncreds_version: [FFI_ANONCREDS_STRING, []],
   anoncreds_set_default_logger: [FFI_ERROR_CODE, []],
 
   // Error handling
-  anoncreds_get_current_error: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_STRING))]],
+  anoncreds_get_current_error: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))]],
 
   // Nonce
-  anoncreds_generate_nonce: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_STRING))]],
+  anoncreds_generate_nonce: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))]],
 
   // Buffer and memory management
   anoncreds_buffer_free: [FFI_VOID, [ByteBufferStruct]],
-  anoncreds_string_free: [FFI_VOID, [koffi.pointer(FFI_STRING)]],
+  anoncreds_string_free: [FFI_VOID, [koffi.pointer(FFI_VOID)]],
   anoncreds_object_free: [FFI_VOID, [FFI_OBJECT_HANDLE]],
 
   // Object operations
   anoncreds_object_get_json: [FFI_ERROR_CODE, [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(ByteBufferStruct))]],
-  anoncreds_object_get_type_name: [FFI_ERROR_CODE, [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_STRING))]],
+  anoncreds_object_get_type_name: [FFI_ERROR_CODE, [FFI_OBJECT_HANDLE, koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))]],
 
   // Schema operations
   anoncreds_create_schema: [
@@ -101,7 +102,7 @@ export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
   ],
   anoncreds_revocation_registry_definition_get_attribute: [
     FFI_ERROR_CODE,
-    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_STRING))],
+    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))],
   ],
   anoncreds_revocation_registry_from_json: [
     FFI_ERROR_CODE,
@@ -163,7 +164,7 @@ export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
   ],
 
   // Link secret operations
-  anoncreds_create_link_secret: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_STRING))]],
+  anoncreds_create_link_secret: [FFI_ERROR_CODE, [koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))]],
 
   // Credential offer operations
   anoncreds_create_credential_offer: [
@@ -216,7 +217,7 @@ export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
   anoncreds_credential_from_json: [FFI_ERROR_CODE, [ByteBufferStruct, koffi.out(koffi.pointer(FFI_OBJECT_HANDLE))]],
   anoncreds_credential_get_attribute: [
     FFI_ERROR_CODE,
-    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_STRING))],
+    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))],
   ],
   anoncreds_process_credential: [
     FFI_ERROR_CODE,
@@ -229,7 +230,10 @@ export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
       koffi.out(koffi.pointer(FFI_OBJECT_HANDLE)),
     ],
   ],
-  anoncreds_encode_credential_attributes: [FFI_ERROR_CODE, [StringListStruct, koffi.out(koffi.pointer(FFI_STRING))]],
+  anoncreds_encode_credential_attributes: [
+    FFI_ERROR_CODE,
+    [StringListStruct, koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))],
+  ],
 
   // W3C Credential operations
   anoncreds_create_w3c_credential: [
@@ -269,7 +273,7 @@ export const nativeBindings: Record<string, [TypeSpec, Array<TypeSpec>]> = {
   ],
   anoncreds_w3c_credential_proof_get_attribute: [
     FFI_ERROR_CODE,
-    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_STRING))],
+    [FFI_OBJECT_HANDLE, FFI_STRING, koffi.out(koffi.pointer(FFI_ANONCREDS_STRING))],
   ],
 
   // Presentation request operations
