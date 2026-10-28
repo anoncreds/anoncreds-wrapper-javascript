@@ -25,6 +25,7 @@
   },
   "files": [
     "build",
+    "src/specs",
     "android/src",
     "android/build.gradle",
     "android/CMakeLists.txt",
@@ -37,6 +38,19 @@
     "anoncreds.podspec",
     "scripts"
   ],
+  "codegenConfig": {
+    "name": "RNAnoncredsSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "org.hyperledger.anoncreds"
+    },
+    "ios": {
+      "modulesProvider": {
+        "Anoncreds": "Anoncreds"
+      }
+    }
+  },
   "scripts": {
     "check-types": "tsc -p ./tsconfig.build.json --noEmit",
     "build": "tsdown",
