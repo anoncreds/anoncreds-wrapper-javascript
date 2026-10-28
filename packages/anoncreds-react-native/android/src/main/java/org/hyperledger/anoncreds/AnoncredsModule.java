@@ -2,45 +2,35 @@ package org.hyperledger.anoncreds;
 
 import android.util.Log;
 import androidx.annotation.Keep;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.facebook.proguard.annotations.DoNotStrip;
-import com.facebook.react.bridge.JavaScriptContextHolder;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.turbomodule.core.CallInvokerHolderImpl;
-import com.facebook.react.turbomodule.core.interfaces.CallInvokerHolder;
+import com.facebook.react.turbomodule.core.interfaces.BindingsInstallerHolder;
+import com.facebook.react.turbomodule.core.interfaces.TurboModuleWithJSIBindings;
 
 @Keep
 @DoNotStrip
-public class AnoncredsModule extends ReactContextBaseJavaModule {
+public class AnoncredsModule extends NativeAnoncredsSpec implements TurboModuleWithJSIBindings {
     static {
       System.loadLibrary("anoncredsreactnative");
     }
-
-    public static final String NAME = "Anoncreds";
-
-    static String TAG = "Anoncreds";
 
     public AnoncredsModule(ReactApplicationContext reactContext) {
         super(reactContext);
     }
 
+    // New Architecture: React Native installs the bindings that this returns when it creates the module
+    @DoNotStrip
     @Override
-    @NonNull
-    public String getName() {
-        return TAG;
-    }
+    public native BindingsInstallerHolder getBindingsInstaller();
 
     private static native void installNative(long jsiRuntimePointer, CallInvokerHolderImpl jsCallInvokerHolder);
 
-    @ReactMethod(isBlockingSynchronousMethod = true)
+    // Old Architecture: install using the runtime of the bridge
+    @Override
     public boolean install() {
       try {
-        System.loadLibrary("anoncredsreactnative");
         ReactContext context = getReactApplicationContext();
         long jsContextPointer = context.getJavaScriptContextHolder().get();
         CallInvokerHolderImpl holder = (CallInvokerHolderImpl) context.getJSCallInvokerHolder();
