@@ -8,10 +8,8 @@ export const stringListToStringListStruct = (stringList: Array<string>) => {
   }
 }
 
-// Reads a UTF-8 byte buffer that AnonCreds allocated as a string. koffi.decode(data, type, len) would make a new array
-// type on every call, which koffi never frees
 export const byteBufferToString = (byteBuffer: { data: unknown; len: number }): string =>
-  koffi.decode.string(byteBuffer.data, byteBuffer.len)
+  koffi.decode(byteBuffer.data, 'char', byteBuffer.len)
 
 export const objectHandleListToObjectHandleListStruct = (objectHandleList: Array<ObjectHandle>) => {
   return {
