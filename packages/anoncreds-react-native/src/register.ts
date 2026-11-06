@@ -1,5 +1,6 @@
 import { NativeModules, Platform } from 'react-native'
 import type { NativeBindings } from './NativeBindings'
+import AnoncredsModule from './specs/NativeAnoncreds'
 
 declare global {
   const _anoncreds: NativeBindings
@@ -17,9 +18,7 @@ export const register = (): NativeBindings => {
 
   // Check if the constructor exists. If not, try installing the JSI bindings.
   if (!doesAnoncredsExist) {
-    const anoncredsModule = NativeModules.Anoncreds as { install: () => boolean } | null
-
-    if (anoncredsModule == null) {
+    if (AnoncredsModule == null) {
       let message = `Failed to create a new ${libraryName}' instance: The native ${libraryName} Module could not be found.'
       message += '\n* Make sure is correctly autolinked.`
 
@@ -48,15 +47,8 @@ export const register = (): NativeBindings => {
       throw new Error(message)
     }
 
-    // Check if we are running on-device (JSI)
-    if (anoncredsModule.install == null) {
-      throw new Error(
-        `Failed to create a new ${libraryName} instance: React Native is not running on-device. ${libraryName} can only be used when synchronous method invocations (JSI) are possible. If you are using a remote debugger (e.g. Chrome), switch to an on-device debugger (e.g. Flipper) instead.`
-      )
-    }
-
-    // Call the synchronous blocking install() function
-    const result = anoncredsModule.install()
+    // Only reached on the old architecture: on the New Architecture, getting the module already installed the bindings
+    const result = AnoncredsModule.install()
     if (!result)
       throw new Error(
         `Failed to create a new ${libraryName} instance: The native ${libraryName} Module could not be installed! Looks like something went wrong when installing JSI bindings.`
