@@ -49,14 +49,12 @@ export class CredentialRequest extends AnoncredsObject {
       }
     }
     return {
-      credentialRequest: new CredentialRequest(createReturnObj.credentialRequest.handle),
-      credentialRequestMetadata: new CredentialRequestMetadata(createReturnObj.credentialRequestMetadata.handle),
+      credentialRequest: new CredentialRequest(createReturnObj.credentialRequest),
+      credentialRequestMetadata: new CredentialRequestMetadata(createReturnObj.credentialRequestMetadata),
     }
   }
 
   public static fromJson(json: JsonObject) {
-    return new CredentialRequest(
-      NativeAnoncreds.instance.credentialRequestFromJson({ json: JSON.stringify(json) }).handle
-    )
+    return new CredentialRequest(NativeAnoncreds.instance.credentialRequestFromJson({ json: JSON.stringify(json) }))
   }
 }

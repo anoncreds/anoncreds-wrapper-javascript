@@ -53,12 +53,12 @@ export class CredentialRevocationState extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new CredentialRevocationState(credentialRevocationStateHandle.handle)
+    return new CredentialRevocationState(credentialRevocationStateHandle)
   }
 
   public static fromJson(json: JsonObject) {
     return new CredentialRevocationState(
-      NativeAnoncreds.instance.revocationStateFromJson({ json: JSON.stringify(json) }).handle
+      NativeAnoncreds.instance.revocationStateFromJson({ json: JSON.stringify(json) })
     )
   }
 

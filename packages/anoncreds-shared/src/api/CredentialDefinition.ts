@@ -45,15 +45,15 @@ export class CredentialDefinition extends AnoncredsObject {
       }
     }
     return {
-      credentialDefinition: new CredentialDefinition(createReturnObj.credentialDefinition.handle),
-      credentialDefinitionPrivate: new CredentialDefinitionPrivate(createReturnObj.credentialDefinitionPrivate.handle),
-      keyCorrectnessProof: new KeyCorrectnessProof(createReturnObj.keyCorrectnessProof.handle),
+      credentialDefinition: new CredentialDefinition(createReturnObj.credentialDefinition),
+      credentialDefinitionPrivate: new CredentialDefinitionPrivate(createReturnObj.credentialDefinitionPrivate),
+      keyCorrectnessProof: new KeyCorrectnessProof(createReturnObj.keyCorrectnessProof),
     }
   }
 
   public static fromJson(json: JsonObject) {
     return new CredentialDefinition(
-      NativeAnoncreds.instance.credentialDefinitionFromJson({ json: JSON.stringify(json) }).handle
+      NativeAnoncreds.instance.credentialDefinitionFromJson({ json: JSON.stringify(json) })
     )
   }
 }

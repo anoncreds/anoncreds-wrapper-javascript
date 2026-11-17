@@ -114,11 +114,11 @@ export class Presentation extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new Presentation(presentationHandle.handle)
+    return new Presentation(presentationHandle)
   }
 
   public static fromJson(json: JsonObject) {
-    return new Presentation(NativeAnoncreds.instance.presentationFromJson({ json: JSON.stringify(json) }).handle)
+    return new Presentation(NativeAnoncreds.instance.presentationFromJson({ json: JSON.stringify(json) }))
   }
 
   public verify(options: VerifyPresentationOptions) {

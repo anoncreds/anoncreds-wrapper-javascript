@@ -78,11 +78,11 @@ export class Credential extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new Credential(credential.handle)
+    return new Credential(credential)
   }
 
   public static fromJson(json: JsonObject) {
-    return new Credential(NativeAnoncreds.instance.credentialFromJson({ json: JSON.stringify(json) }).handle)
+    return new Credential(NativeAnoncreds.instance.credentialFromJson({ json: JSON.stringify(json) }))
   }
 
   public process(options: ProcessCredentialOptions) {
@@ -153,13 +153,11 @@ export class Credential extends AnoncredsObject {
         objectHandle: this.handle,
         issuerId: options.issuerId,
         w3cVersion: options.w3cVersion,
-      }).handle
+      })
     )
   }
 
   public static fromW3c(options: CredentialFromW3cOptions) {
-    return new Credential(
-      NativeAnoncreds.instance.credentialFromW3c({ objectHandle: options.credential.handle }).handle
-    )
+    return new Credential(NativeAnoncreds.instance.credentialFromW3c({ objectHandle: options.credential.handle }))
   }
 }

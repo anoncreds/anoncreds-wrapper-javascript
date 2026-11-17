@@ -75,11 +75,11 @@ export class W3cCredential extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new W3cCredential(credential.handle)
+    return new W3cCredential(credential)
   }
 
   public static fromJson(json: JsonObject) {
-    return new W3cCredential(NativeAnoncreds.instance.w3cCredentialFromJson({ json: JSON.stringify(json) }).handle)
+    return new W3cCredential(NativeAnoncreds.instance.w3cCredentialFromJson({ json: JSON.stringify(json) }))
   }
 
   public process(options: ProcessW3cCredentialOptions) {
@@ -162,7 +162,7 @@ export class W3cCredential extends AnoncredsObject {
     return new Credential(
       NativeAnoncreds.instance.credentialFromW3c({
         objectHandle: this.handle,
-      }).handle
+      })
     )
   }
 
@@ -172,7 +172,7 @@ export class W3cCredential extends AnoncredsObject {
         objectHandle: options.credential.handle,
         issuerId: options.issuerId,
         w3cVersion: options.w3cVersion,
-      }).handle
+      })
     )
   }
 }
