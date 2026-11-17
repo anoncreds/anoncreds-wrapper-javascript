@@ -1,5 +1,13 @@
 # @hyperledger/anoncreds-react-native
 
+## 0.6.0
+
+### Patch Changes
+
+- e9977cb: fix(react-native): `toJson` frees its buffer also when reading it fails
+- Updated dependencies [e9977cb]
+  - @hyperledger/anoncreds-shared@0.6.0
+
 ## 0.5.0
 
 ### Minor Changes
