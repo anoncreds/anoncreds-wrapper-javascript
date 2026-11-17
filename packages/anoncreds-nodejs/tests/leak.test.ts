@@ -1,5 +1,6 @@
 import { setFlagsFromString } from 'node:v8'
 import { runInNewContext } from 'node:vm'
+import { Schema } from '@hyperledger/anoncreds-shared'
 import { describe, expect, test } from 'vitest'
 import { anoncredsNodeJS } from '../src/index.js'
 
@@ -54,5 +55,15 @@ describe('native memory', { timeout: 120_000 }, () => {
     }, 100)
 
     expect(growth).toBeLessThan(2048)
+  })
+
+  test('keeps objects alive while the API object that holds them is in use', async () => {
+    const schemas = Array.from({ length: 100 }, () =>
+      Schema.create({ name: 'schema', version: '1.0', issuerId: 'mock:uri', attributeNames: ['name'] })
+    )
+    await rssAfterGarbageCollection()
+
+    for (const schema of schemas) expect(schema.toJson()).toMatchObject({ name: 'schema' })
+    for (const schema of schemas) schema.handle.clear()
   })
 })
