@@ -11,10 +11,10 @@ export type CreateSchemaOptions = {
 
 export class Schema extends AnoncredsObject {
   public static create(options: CreateSchemaOptions) {
-    return new Schema(NativeAnoncreds.instance.createSchema(options).handle)
+    return new Schema(NativeAnoncreds.instance.createSchema(options))
   }
 
   public static fromJson(json: JsonObject) {
-    return new Schema(NativeAnoncreds.instance.schemaFromJson({ json: JSON.stringify(json) }).handle)
+    return new Schema(NativeAnoncreds.instance.schemaFromJson({ json: JSON.stringify(json) }))
   }
 }

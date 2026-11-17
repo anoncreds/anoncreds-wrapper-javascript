@@ -32,10 +32,10 @@ export class CredentialOffer extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new CredentialOffer(credentialOfferHandle.handle)
+    return new CredentialOffer(credentialOfferHandle)
   }
 
   public static fromJson(json: JsonObject) {
-    return new CredentialOffer(NativeAnoncreds.instance.credentialOfferFromJson({ json: JSON.stringify(json) }).handle)
+    return new CredentialOffer(NativeAnoncreds.instance.credentialOfferFromJson({ json: JSON.stringify(json) }))
   }
 }

@@ -5,8 +5,9 @@ import type { JsonObject } from './types'
 export class AnoncredsObject {
   public handle: ObjectHandle
 
-  public constructor(handle: number) {
-    this.handle = new ObjectHandle(handle)
+  // Keeps the handle object that the native bindings returned: Node.js frees the object once that is garbage collected
+  public constructor(handle: ObjectHandle | number) {
+    this.handle = typeof handle === 'number' ? new ObjectHandle(handle) : handle
   }
 
   public toJson() {

@@ -67,12 +67,12 @@ export class RevocationStatusList extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new RevocationStatusList(revocationStatusListHandle.handle)
+    return new RevocationStatusList(revocationStatusListHandle)
   }
 
   public static fromJson(json: JsonObject) {
     return new RevocationStatusList(
-      NativeAnoncreds.instance.revocationStatusListFromJson({ json: JSON.stringify(json) }).handle
+      NativeAnoncreds.instance.revocationStatusListFromJson({ json: JSON.stringify(json) })
     )
   }
 

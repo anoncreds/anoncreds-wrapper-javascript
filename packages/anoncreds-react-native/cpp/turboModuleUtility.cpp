@@ -1,3 +1,4 @@
+#include <memory>
 #include <vector>
 
 #include "turboModuleUtility.h"
@@ -100,13 +101,15 @@ jsi::Value createReturnValue(jsi::Runtime &rt, ErrorCode code,
   auto object = jsi::Object(rt);
 
   if (code == ErrorCode::Success) {
+    // Frees the buffer when the scope ends, so also when copying it throws
+    std::unique_ptr<ByteBuffer, void (*)(ByteBuffer *)> freeValue(
+        value, [](ByteBuffer *buffer) { anoncreds_buffer_free(*buffer); });
+
     auto valueWithoutNullptr =
         value == nullptr
             ? jsi::Value::null()
             : jsi::String::createFromUtf8(rt, value->data, value->len);
     object.setProperty(rt, "value", valueWithoutNullptr);
-
-    if (value != nullptr) anoncreds_buffer_free(*value);
   }
 
   object.setProperty(rt, "errorCode", int(code));

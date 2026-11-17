@@ -41,18 +41,16 @@ export class RevocationRegistryDefinition extends AnoncredsObject {
       }
     }
     return {
-      revocationRegistryDefinition: new RevocationRegistryDefinition(
-        createReturnObj.revocationRegistryDefinition.handle
-      ),
+      revocationRegistryDefinition: new RevocationRegistryDefinition(createReturnObj.revocationRegistryDefinition),
       revocationRegistryDefinitionPrivate: new RevocationRegistryDefinitionPrivate(
-        createReturnObj.revocationRegistryDefinitionPrivate.handle
+        createReturnObj.revocationRegistryDefinitionPrivate
       ),
     }
   }
 
   public static fromJson(json: JsonObject) {
     return new RevocationRegistryDefinition(
-      NativeAnoncreds.instance.revocationRegistryDefinitionFromJson({ json: JSON.stringify(json) }).handle
+      NativeAnoncreds.instance.revocationRegistryDefinitionFromJson({ json: JSON.stringify(json) })
     )
   }
 

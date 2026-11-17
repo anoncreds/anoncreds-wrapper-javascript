@@ -92,11 +92,11 @@ export class W3cPresentation extends AnoncredsObject {
         handle.clear()
       }
     }
-    return new W3cPresentation(presentationHandle.handle)
+    return new W3cPresentation(presentationHandle)
   }
 
   public static fromJson(json: JsonObject) {
-    return new W3cPresentation(NativeAnoncreds.instance.w3cPresentationFromJson({ json: JSON.stringify(json) }).handle)
+    return new W3cPresentation(NativeAnoncreds.instance.w3cPresentationFromJson({ json: JSON.stringify(json) }))
   }
 
   public verify(options: VerifyW3cPresentationOptions) {

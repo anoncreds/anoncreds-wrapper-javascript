@@ -12,8 +12,6 @@ export type UpdateRevocationRegistryOptions = {
 
 export class RevocationRegistry extends AnoncredsObject {
   public static fromJson(json: JsonObject) {
-    return new RevocationRegistry(
-      NativeAnoncreds.instance.revocationRegistryFromJson({ json: JSON.stringify(json) }).handle
-    )
+    return new RevocationRegistry(NativeAnoncreds.instance.revocationRegistryFromJson({ json: JSON.stringify(json) }))
   }
 }

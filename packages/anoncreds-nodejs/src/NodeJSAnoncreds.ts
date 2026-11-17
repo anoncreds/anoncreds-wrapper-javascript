@@ -70,6 +70,16 @@ export class NodeJSAnoncreds implements Anoncreds {
     throw this.getAnoncredsError(errorCode)
   }
 
+  // Safety net for an object that is never freed: frees it when its handle is garbage collected. `objectFree`
+  // unregisters the handle, so nothing is freed twice
+  private finalizer = new FinalizationRegistry<number>((handle) => this.nativeAnoncreds.anoncreds_object_free(handle))
+
+  private objectHandle(ret: [unknown] | unknown): ObjectHandle {
+    const objectHandle = new ObjectHandle(handleReturnPointer<number>(ret))
+    this.finalizer.register(objectHandle, objectHandle.handle, objectHandle)
+    return objectHandle
+  }
+
   public generateNonce(): string {
     const ret = allocateStringBuffer()
 
@@ -92,7 +102,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const errorCode = this.nativeAnoncreds.anoncreds_create_schema(name, version, issuerId, attributeNames, ret)
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public revocationRegistryDefinitionGetAttribute(options: { objectHandle: ObjectHandle; name: string }) {
@@ -152,9 +162,9 @@ export class NodeJSAnoncreds implements Anoncreds {
     this.handleError(errorCode)
 
     return {
-      credentialDefinition: new ObjectHandle(handleReturnPointer<number>(credentialDefinitionPtr)),
-      credentialDefinitionPrivate: new ObjectHandle(handleReturnPointer<number>(credentialDefinitionPrivatePtr)),
-      keyCorrectnessProof: new ObjectHandle(handleReturnPointer<number>(keyCorrectnessProofPtr)),
+      credentialDefinition: this.objectHandle(credentialDefinitionPtr),
+      credentialDefinitionPrivate: this.objectHandle(credentialDefinitionPrivatePtr),
+      keyCorrectnessProof: this.objectHandle(keyCorrectnessProofPtr),
     }
   }
 
@@ -213,7 +223,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(credentialPtr))
+    return this.objectHandle(credentialPtr)
   }
 
   public encodeCredentialAttributes(options: { attributeRawValues: string[] }): string[] {
@@ -250,7 +260,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public createCredentialOffer(options: {
@@ -269,7 +279,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public createCredentialRequest(options: {
@@ -299,8 +309,8 @@ export class NodeJSAnoncreds implements Anoncreds {
     this.handleError(errorCode)
 
     return {
-      credentialRequest: new ObjectHandle(handleReturnPointer<number>(credentialRequestPtr)),
-      credentialRequestMetadata: new ObjectHandle(handleReturnPointer<number>(credentialRequestMetadataPtr)),
+      credentialRequest: this.objectHandle(credentialRequestPtr),
+      credentialRequestMetadata: this.objectHandle(credentialRequestMetadataPtr),
     }
   }
 
@@ -356,7 +366,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public verifyPresentation(options: {
@@ -438,7 +448,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public updateRevocationStatusListTimestampOnly(options: {
@@ -455,7 +465,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public updateRevocationStatusList(options: {
@@ -490,7 +500,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public createRevocationRegistryDefinition(options: {
@@ -529,10 +539,8 @@ export class NodeJSAnoncreds implements Anoncreds {
     this.handleError(errorCode)
 
     return {
-      revocationRegistryDefinition: new ObjectHandle(handleReturnPointer<number>(revocationRegistryDefinitionPtr)),
-      revocationRegistryDefinitionPrivate: new ObjectHandle(
-        handleReturnPointer<number>(revocationRegistryDefinitionPrivate)
-      ),
+      revocationRegistryDefinition: this.objectHandle(revocationRegistryDefinitionPtr),
+      revocationRegistryDefinitionPrivate: this.objectHandle(revocationRegistryDefinitionPrivate),
     }
   }
 
@@ -562,7 +570,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public createW3cCredential(options: {
@@ -595,7 +603,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(credentialPtr))
+    return this.objectHandle(credentialPtr)
   }
 
   public processW3cCredential(options: {
@@ -619,7 +627,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public createW3cPresentation(options: {
@@ -654,7 +662,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     )
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public verifyW3cPresentation(options: {
@@ -711,7 +719,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const errorCode = this.nativeAnoncreds.anoncreds_credential_to_w3c(objectHandle, issuerId, w3cVersion, ret)
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public credentialFromW3c(options: { objectHandle: ObjectHandle }): ObjectHandle {
@@ -722,7 +730,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const errorCode = this.nativeAnoncreds.anoncreds_credential_from_w3c(objectHandle, ret)
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public w3cCredentialGetIntegrityProofDetails(options: { objectHandle: ObjectHandle }) {
@@ -732,7 +740,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const errorCode = this.nativeAnoncreds.anoncreds_w3c_credential_get_integrity_proof_details(objectHandle, ret)
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public w3cCredentialProofGetAttribute(options: { objectHandle: ObjectHandle; name: string }): string | null {
@@ -771,7 +779,7 @@ export class NodeJSAnoncreds implements Anoncreds {
     const errorCode = cb({ data: byteBuffer, len: byteBuffer.length }, ret)
     this.handleError(errorCode)
 
-    return new ObjectHandle(handleReturnPointer<number>(ret))
+    return this.objectHandle(ret)
   }
 
   public presentationRequestFromJson(options: { json: string }) {
@@ -843,11 +851,11 @@ export class NodeJSAnoncreds implements Anoncreds {
     this.handleError(errorCode)
 
     const returnValue = handleReturnPointer<{ data: unknown; len: number }>(ret)
-    const output = byteBufferToString(returnValue)
-
-    this.nativeAnoncreds.anoncreds_buffer_free(returnValue)
-
-    return output
+    try {
+      return byteBufferToString(returnValue)
+    } finally {
+      this.nativeAnoncreds.anoncreds_buffer_free(returnValue)
+    }
   }
 
   public getTypeName(options: { objectHandle: ObjectHandle }) {
@@ -862,6 +870,7 @@ export class NodeJSAnoncreds implements Anoncreds {
   }
 
   public objectFree(options: { objectHandle: ObjectHandle }) {
+    this.finalizer.unregister(options.objectHandle)
     this.nativeAnoncreds.anoncreds_object_free(options.objectHandle.handle)
   }
 
